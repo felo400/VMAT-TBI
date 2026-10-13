@@ -31,24 +31,34 @@ namespace VMS.TPS
             string pluginDir = GetOriginalDirectory(Assembly.GetExecutingAssembly());
             ResolveEventHandler resolver = (sender, args) =>
             {
+                string name = "";
                 try
                 {
-                    string name = new AssemblyName(args.Name).Name;
-                    Assembly already = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase));
-                    if (already != null) return already;
+                    name = new AssemblyName(args.Name).Name;
+                    //1) same simple name already loaded (also covers version mismatches that the stand-alone .exe solved with
+                    //   bindingRedirects, e.g. System.Buffers 4.0.2.0 requested vs 4.0.4.0 shipped)
+                    Assembly already = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => !a.IsDynamic && string.Equals(a.GetName().Name, name, StringComparison.OrdinalIgnoreCase));
+                    if (already != null) { LogResolve(args.Name, "already loaded: " + already.FullName); return already; }
+                    //2) look for the file next to the plugin
                     foreach (string dir in GetSearchDirectories(pluginDir))
                     {
                         foreach (string ext in new[] { ".dll", ".exe" })
                         {
                             string candidate = Path.Combine(dir, name + ext);
-                            if (File.Exists(candidate)) return Assembly.LoadFrom(candidate);
+                            if (File.Exists(candidate))
+                            {
+                                Assembly loaded = Assembly.LoadFrom(candidate);
+                                LogResolve(args.Name, "loaded from " + candidate);
+                                return loaded;
+                            }
                         }
                     }
+                    LogResolve(args.Name, "NOT FOUND in: " + string.Join(" ; ", GetSearchDirectories(pluginDir)));
                 }
-                catch { }
+                catch (Exception e) { LogResolve(args.Name, "EXCEPTION " + e.Message); }
                 return null;
             };
-            AppDomain.CurrentDomain.AssemblyResolve += resolver;
+            AddResolverFirst(resolver);
 
             //the configuration files/templates use '.' as decimal separator. Force the invariant culture ONLY while the
             //plugin runs (Eclipse's own culture is restored afterwards)
@@ -71,7 +81,7 @@ namespace VMS.TPS
             }
             catch (Exception e)
             {
-                MessageBox.Show($"Error en VMAT AutoPlanner:\n{e.GetType().Name}: {e.Message}\n\n{e.InnerException?.Message}\n\n{e.StackTrace}", "VMAT AutoPlanner");
+                MessageBox.Show($"Error en VMAT AutoPlanner (version {Assembly.GetExecutingAssembly().GetName().Version}):\n{e.GetType().Name}: {e.Message}\n\n{e.InnerException?.Message}\n\nCarpeta del plugin: {pluginDir}\nRegistro de carga: {ResolveLogPath}\n\n{e.StackTrace}", "VMAT AutoPlanner");
             }
             finally
             {
@@ -82,7 +92,37 @@ namespace VMS.TPS
                 AppDomain.CurrentDomain.AssemblyResolve -= resolver;
             }
         }
-            /// <summary>
+    
+        /// <summary>
+        /// Put our AssemblyResolve handler FIRST in the invocation list, so it answers before any handler Eclipse may have registered
+        /// </summary>
+        private static void AddResolverFirst(ResolveEventHandler handler)
+        {
+            try
+            {
+                FieldInfo f = typeof(AppDomain).GetField("_AssemblyResolve", BindingFlags.NonPublic | BindingFlags.Instance);
+                ResolveEventHandler existing = f?.GetValue(AppDomain.CurrentDomain) as ResolveEventHandler;
+                if (existing != null)
+                {
+                    Delegate[] others = existing.GetInvocationList();
+                    foreach (ResolveEventHandler d in others) AppDomain.CurrentDomain.AssemblyResolve -= d;
+                    AppDomain.CurrentDomain.AssemblyResolve += handler;
+                    foreach (ResolveEventHandler d in others) AppDomain.CurrentDomain.AssemblyResolve += d;
+                    return;
+                }
+            }
+            catch { }
+            AppDomain.CurrentDomain.AssemblyResolve += handler;
+        }
+
+        internal static string ResolveLogPath => Path.Combine(Path.GetTempPath(), "VMATAutoPlanner_resolve.log");
+
+        private static void LogResolve(string request, string result)
+        {
+            try { File.AppendAllText(ResolveLogPath, $"{DateTime.Now:s}  {request}  ->  {result}{Environment.NewLine}"); } catch { }
+        }
+
+        /// <summary>
         /// Original folder of an assembly (CodeBase survives shadow copying; Location is the fallback)
         /// </summary>
         internal static string GetOriginalDirectory(Assembly a)

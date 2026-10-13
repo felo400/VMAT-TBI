@@ -137,7 +137,7 @@ namespace VMS.TPS
             Choice result = Choice.None;
             Window w = new Window
             {
-                Title = "VMAT AutoPlanner - Eclipse 16.1",
+                Title = $"VMAT AutoPlanner - Eclipse 16.1 (v{Assembly.GetExecutingAssembly().GetName().Version})",
                 SizeToContent = SizeToContent.WidthAndHeight,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 ResizeMode = ResizeMode.NoResize,
