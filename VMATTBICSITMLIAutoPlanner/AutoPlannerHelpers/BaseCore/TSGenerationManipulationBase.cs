@@ -313,7 +313,7 @@ namespace AutoPlannerHelpers.BaseCore
         /// </summary>
         /// <param name="structuresToRemove"></param>
         /// <returns></returns>
-        private bool RemoveStructures(IEnumerable<string> structuresToRemove)
+        private bool RemoveStructures(IEnumerable<string> structuresToRemove, bool bestEffort = false)
         {
             int calcItems = structuresToRemove.Count();
             int counter = 0;
@@ -327,10 +327,16 @@ namespace AutoPlannerHelpers.BaseCore
                         ProvideUIUpdate(100 * ++counter / calcItems, $"Removing: {itr}");
                         EclipseContext.GetInstance().StructureSet.RemoveStructure(s);
                     }
+                    else if (bestEffort)
+                    {
+                        //leftover tuning structure from a previous/other script that this run does NOT need to recreate:
+                        //ESAPI can't remove it (e.g. DICOM type 'None' or approved) -> leave it and continue
+                        ProvideUIUpdate(100 * ++counter / calcItems, $"Warning! Could not remove old structure: {itr}{(string.IsNullOrEmpty(s.DicomType) ? " (DICOM type: None)" : "")}. It is NOT used by this run -> left in the structure set. Remove it manually in Eclipse if desired.");
+                    }
                     else
                     {
                         ProvideUIUpdate($"Error! Could not remove structure: {itr}!", true);
-                        if (string.IsNullOrEmpty(s.DicomType)) ProvideUIUpdate($"{itr} DICOM type: None");
+                        if (string.IsNullOrEmpty(s.DicomType)) ProvideUIUpdate($"{itr} DICOM type: None. Change its DICOM type in Eclipse (e.g. CONTROL) or delete it manually and run again.");
                         return true;
                     }
                 }
@@ -364,9 +370,11 @@ namespace AutoPlannerHelpers.BaseCore
             IEnumerable<string> tsStructs = EclipseContext.GetInstance().StructureSet.Structures.Where(x => x.Id.Length > 2 && string.Equals(x.Id.ToLower().Substring(0, 3), "ts_")).Select(x => x.Id);
             //Add the difference between tsStructures and removeList to removeList (i.e., existing ts structures that need to be removed that weren't contained
             //in the requested ts generation structures for this run
-            removeList.AddRange(tsStructs.Except(removeList));
-            //remove the structures
+            List<string> extraTSStructures = tsStructs.Except(removeList).ToList();
+            //remove the structures this run will recreate (must succeed)
             if (RemoveStructures(removeList)) return true;
+            //remove any other old 'TS_' structures (best effort: structures that can't be removed are left and reported)
+            if (RemoveStructures(extraTSStructures, true)) return true;
 
             ProvideUIUpdate(100, "Prior tuning structures successfully removed!");
             ProvideUIUpdate($"Elapsed time: {ElapsedRunTime}");
