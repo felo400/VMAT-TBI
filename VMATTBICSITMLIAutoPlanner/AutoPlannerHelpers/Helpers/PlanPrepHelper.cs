@@ -1,0 +1,361 @@
+﻿using AutoPlannerHelpers.Context;
+using AutoPlannerHelpers.Logging;
+using AutoPlannerHelpers.Models;
+using AutoPlannerHelpers.Prompts;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using VMS.TPS.Common.Model.API;
+using VMS.TPS.Common.Model.Types;
+using PlanType = AutoPlannerHelpers.Enums.PlanType;
+
+namespace AutoPlannerHelpers.Helpers
+{
+    public static class PlanPrepHelper
+    {
+        /// <summary>
+        /// Helper method to retrieve the VMAT plan that should be prepared for treatment
+        /// </summary>
+        /// <param name="pi"></param>
+        /// <param name="courseId"></param>
+        /// <returns></returns>
+        public static ExternalPlanSetup RetrieveVMATPlan(string courseId, PlanType type)
+        {
+            if (ReferenceEquals(EclipseContext.GetInstance().Patient, null)) return null;
+            ExternalPlanSetup thePlan = null;
+            string fullLogName = LogHelper.GetFullLogFileFromExistingMRN(EclipseContext.GetInstance().Patient.Id, type);
+            if (!string.IsNullOrEmpty(fullLogName))
+            {
+                string initPlanUID = LogHelper.LoadVMATPlanUIDFromLogFile(fullLogName);
+                if (!string.IsNullOrEmpty(initPlanUID))
+                {
+                    ExternalPlanSetup tmp = EclipseContext.GetInstance().Patient.Courses.SelectMany(x => x.ExternalPlanSetups).FirstOrDefault(x => string.Equals(x.UID, initPlanUID));
+                    if (!ReferenceEquals(tmp, null))
+                    {
+                        Course theCourse = tmp.Course;
+                        if (theCourse.ExternalPlanSetups.Where(x => !x.Id.ToLower().Contains("legs")).Count() > 1)
+                        {
+                            thePlan = PromptUserToSelectPlan(theCourse);
+                            if (ReferenceEquals(thePlan, null))
+                            {
+                                Logger.GetInstance().LogError("No plan selected. Exiting");
+                                return thePlan;
+                            }
+                        }
+                        else thePlan = tmp;
+                    }
+                }
+            }
+            if (ReferenceEquals(thePlan, null))
+            {
+                if (EclipseContext.GetInstance().Patient.Courses.Any(x => string.Equals(x.Id, courseId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Course theCourse = EclipseContext.GetInstance().Patient.Courses.FirstOrDefault(x => string.Equals(x.Id.ToLower(), courseId.ToLower()));
+                    if (theCourse.ExternalPlanSetups.Where(x => !x.Id.ToLower().Contains("legs")).Count() > 1)
+                    {
+                        thePlan = PromptUserToSelectPlan(theCourse);
+                        if (ReferenceEquals(thePlan, null))
+                        {
+                            Logger.GetInstance().LogError("No plan selected. Exiting");
+                            return thePlan;
+                        }
+                        else thePlan = theCourse.ExternalPlanSetups.First();
+                    }
+                }
+                else
+                {
+                    Logger.GetInstance().LogError($"Error! No log file found and no course named {courseId} found! Nothing to prep! Exiting!");
+                }
+            }
+            return thePlan;
+        }
+
+        /// <summary>
+        /// Helper method to prompt the user to select a VMAT plan that should be prepared for treatment
+        /// </summary>
+        /// <param name="theCourse"></param>
+        /// <returns></returns>
+        public static ExternalPlanSetup PromptUserToSelectPlan(Course theCourse)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"Multiple plans found in {theCourse.Id} course!");
+            sb.AppendLine("Please select a plan to prep!");
+            SelectItemPrompt SIP = new SelectItemPrompt(sb.ToString(), theCourse.ExternalPlanSetups.Where(x => x.Beams.Any(y => !y.IsSetupField) && !x.Id.ToLower().Contains("leg")).Select(x => x.Id).ToList());
+            SIP.ShowDialog();
+            if (!SIP.GetSelection()) return null;
+            //get the plan the user chose from the combobox
+            return theCourse.ExternalPlanSetups.FirstOrDefault(x => string.Equals(x.Id, SIP.GetSelectedItem()));
+        }
+
+        /// <summary>
+        /// Simple helper method to check if flash structures were added to the structure
+        /// </summary>
+        /// <param name="ss"></param>
+        /// <returns></returns>
+        public static bool CheckForFlash(StructureSet ss)
+        {
+            //look in the structure set to see if any of the structures contain the string 'flash'. If so, return true indicating flash was included in this plan
+            if (ss.Structures.Any(x => x.Id.ToLower().Contains("flash") && !x.IsEmpty)) return true;
+            return false;
+        }
+
+        public static StringBuilder GetTBIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans)
+        {
+            return GetTBITMLIShiftNote(vmatPlan, appaPlans, "TBI");
+        }
+
+        public static StringBuilder GetTMLIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans)
+        {
+            return GetTBITMLIShiftNote(vmatPlan, appaPlans, "TMLI");
+        }
+
+        /// <summary>
+        /// Helper method to gather the relevant information that should be put in the TBI shift note
+        /// </summary>
+        /// <param name="vmatPlan"></param>
+        /// <param name="appaPlans"></param>
+        /// <returns></returns>
+        private static StringBuilder GetTBITMLIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans, string planType)
+        {
+            StringBuilder sb = new StringBuilder();
+            List<VVector> isoPositions = ExtractIsoPositions(vmatPlan);
+            int numVMATIsos = isoPositions.Count;
+            int numIsos = numVMATIsos;
+
+            if (appaPlans.Any())
+            {
+                foreach (ExternalPlanSetup itr in appaPlans)
+                {
+                    isoPositions.AddRange(ExtractIsoPositions(itr));
+                }
+                numIsos = isoPositions.Count;
+            }
+            List<IsocenterModel> isoNames = new List<IsocenterModel>(IsoNameHelper.GetTBIVMATIsoNames(numVMATIsos, numIsos));
+            if (appaPlans.Any()) isoNames.AddRange(IsoNameHelper.GetTBIAPPAIsoNames(numVMATIsos, numIsos));
+
+            //vector to hold the x,y,z shifts from CT ref and the shifts between each adjacent iso for each axis (LR, AntPost, SupInf)
+            List<VVector> shifts = CalculateShifts(isoPositions, vmatPlan.StructureSet.Image.UserOrigin);
+
+            //create the message
+            double TT = -1;
+            //grab the couch surface
+            if (StructureTuningHelper.DoesStructureExistInSS("couchsurface", true))
+            {
+                Structure couchSurface = StructureTuningHelper.GetStructureFromId("couchsurface");
+                TT = (vmatPlan.Beams.First(x => !x.IsSetupField).IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
+            }
+
+            sb.Append(BuildTBITMLIShiftNote(planType, TT, isoNames, shifts, numVMATIsos, numIsos));
+            return sb;
+        }
+
+        /// <summary>
+        /// Helper method to take the relevant shift information and build the shift note for TBI plans
+        /// </summary>
+        /// <param name="TT"></param>
+        /// <param name="isoNames"></param>
+        /// <param name="shifts"></param>
+        /// <param name="numVMATIsos"></param>
+        /// <param name="numIsos"></param>
+        /// <returns></returns>
+        private static StringBuilder BuildTBITMLIShiftNote(string planType, double TT, List<IsocenterModel> isoNames, List<VVector> shifts, int numVMATIsos, int numIsos)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (TT != -1)
+            {
+                sb.AppendLine("***Bars out***");
+            }
+            else sb.AppendLine("No couch surface structure found in plan!");
+
+            if (numIsos > numVMATIsos) sb.AppendLine($"VMAT {planType} setup per procedure. Please ensure the matchline on Spinning Manny and the bag matches");
+            else sb.AppendLine($"VMAT {planType} setup per procedure. No Spinning Manny.");
+            if (TT != -1) sb.AppendLine($"TT = {TT:0.0} cm for all plans");
+            sb.AppendLine("Dosimetric shifts SUP to INF:");
+
+            int count = 0;
+            foreach (VVector itr in shifts)
+            {
+                if (count == numVMATIsos)
+                {
+                    //if numVMATisos == numIsos this message won't be displayed. Otherwise, we have exhausted the vmat isos and need to add these lines to the shift note
+                    sb.AppendLine("Rotate Spinning Manny, shift to opposite Couch Lat");
+                    sb.AppendLine("Upper Leg iso - same Couch Lng as Pelvis iso");
+                    //let the therapists know that they need to shift couch lateral to the opposite side if the initial lat shift was non-zero
+                    if (!CalculationHelper.AreEqual(itr.x, 0.0)) sb.AppendLine("Shift couch lateral to opposite side!");
+                }
+                else
+                {
+                    if (count == 0)
+                    {
+                        sb.AppendLine($"{isoNames.ElementAt(count).IsocenterId} iso shift from CT REF:");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"{isoNames.ElementAt(count).IsocenterId} shift from **{isoNames.ElementAt(count - 1).IsocenterId} ISO**");
+                    }
+                    if (!CalculationHelper.AreEqual(itr.x, 0.0)) sb.AppendLine($"X = {Math.Abs(itr.x):0.0} cm {(itr.x > 0 ? "LEFT" : "RIGHT")}");
+                    if (!CalculationHelper.AreEqual(itr.y, 0.0)) sb.AppendLine($"Y = {Math.Abs(itr.y):0.0} cm {(itr.y > 0 ? "POST" : "ANT")}");
+                    sb.AppendLine($"Z = {Math.Abs(itr.z):0.0} cm {(itr.z > 0 ? "SUP" : "INF")}");
+                }
+                count++;
+            }
+            return sb;
+        }
+
+        /// <summary>
+        /// Helper method to gather the relevant information that should be put in the CSI shift note
+        /// </summary>
+        /// <param name="vmatPlan"></param>
+        /// <param name="appaPlan"></param>
+        /// <returns></returns>
+        public static StringBuilder GetCSIShiftNote(ExternalPlanSetup vmatPlan)
+        {
+            StringBuilder sb = new StringBuilder();
+            List<VVector> isoPositions = ExtractIsoPositions(vmatPlan);
+
+            //vector to hold the isocenter name, the x,y,z shifts from CT ref, and the shifts between each adjacent iso for each axis (LR, AntPost, SupInf)
+            List<VVector> shifts = CalculateShifts(isoPositions, vmatPlan.StructureSet.Image.UserOrigin);
+
+            //create the message
+            double TT = -1;
+            //grab the couch surface
+            if (StructureTuningHelper.DoesStructureExistInSS("couchsurface", true))
+            {
+                Structure couchSurface = StructureTuningHelper.GetStructureFromId("couchsurface");
+                TT = (vmatPlan.Beams.First(x => !x.IsSetupField).IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
+            }
+
+            sb.Append(BuildCSIShiftNote(TT, IsoNameHelper.GetCSIIsoNames(isoPositions.Count), shifts));
+            return sb;
+        }
+
+        /// <summary>
+        /// Helper method to take the relevant shift information and build the shift note for CSI plan
+        /// </summary>
+        /// <param name="TT"></param>
+        /// <param name="isoNames"></param>
+        /// <param name="shifts"></param>
+        /// <param name="numVMATIsos"></param>
+        /// <param name="numIsos"></param>
+        /// <returns></returns>
+        private static StringBuilder BuildCSIShiftNote(double TT, List<IsocenterModel> isoNames, List<VVector> shiftsBetweenIsos)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (TT != -1)
+            {
+                sb.AppendLine("***Bars in***");
+            }
+            else sb.AppendLine("No couch surface structure found in plan!");
+
+            sb.AppendLine("VMAT CSI setup per procedure.");
+            if (TT != -1) sb.AppendLine($"TT = {TT:0.0} cm for all plans");
+            sb.AppendLine("Dosimetric shifts SUP to INF:");
+
+            int count = 0;
+            foreach (VVector itr in shiftsBetweenIsos)
+            {
+                if (count == 0)
+                {
+                    sb.AppendLine($"{isoNames.ElementAt(count).IsocenterId} iso shift from CT REF:");
+                }
+                else
+                {
+                    sb.AppendLine($"{isoNames.ElementAt(count).IsocenterId} shift from **{isoNames.ElementAt(count - 1).IsocenterId} ISO**");
+                }
+                if (!CalculationHelper.AreEqual(itr.x, 0.0)) sb.AppendLine($"X = {Math.Abs(itr.x):0.0} cm {(itr.x > 0 ? "LEFT" : "RIGHT")}");
+                if (!CalculationHelper.AreEqual(itr.y, 0.0)) sb.AppendLine($"Y = {Math.Abs(itr.y):0.0} cm {(itr.y > 0 ? "POST" : "ANT")}");
+                sb.AppendLine($"Z = {Math.Abs(itr.z):0.0} cm {(itr.z > 0 ? "SUP" : "INF")}");
+                count++;
+            }
+            return sb;
+        }
+
+        /// <summary>
+        /// Helper method to extract the isocenter positions for the supplied plan
+        /// </summary>
+        /// <param name="plan"></param>
+        /// <returns></returns>
+        public static List<VVector> ExtractIsoPositions(ExternalPlanSetup plan)
+        {
+            List<VVector> isoPositions = new List<VVector> { };
+            //order from sup to inf for HFS
+            foreach (Beam b in plan.Beams.Where(x => !x.IsSetupField).OrderByDescending(o => o.IsocenterPosition.z))
+            {
+                VVector v = b.IsocenterPosition;
+                if (!isoPositions.Any(k => CalculationHelper.AreEqual(k.z, v.z)))
+                {
+                    isoPositions.Add(v);
+                }
+            }
+            return isoPositions;
+        }
+
+        /// <summary>
+        /// Helper method to take the supplied plan and extract a list of the list of beams for each isocenter
+        /// </summary>
+        /// <param name="plan"></param>
+        /// <returns></returns>
+        public static List<List<Beam>> ExtractBeamsPerIso(ExternalPlanSetup plan)
+        {
+            List<List<Beam>> beamsPerIso = new List<List<Beam>> { };
+            List<Beam> beams = new List<Beam> { };
+            double PreviosIsoZ = -10000.0;
+            foreach (Beam b in plan.Beams.Where(x => !x.IsSetupField).OrderByDescending(o => o.IsocenterPosition.z))
+            {
+                VVector v = b.IsocenterPosition;
+                if (!CalculationHelper.AreEqual(v.z, PreviosIsoZ))
+                {
+                    //do NOT add the first detected isocenter to the number of beams per isocenter list. Start with the second isocenter 
+                    //(otherwise there will be no beams in the first isocenter, the beams in the first isocenter will be attached to the second isocenter, etc.)
+                    if (beams.Any())
+                    {
+                        //NOTE: it is important to have 'new List<Beam>(beams)' as the argument rather than 'beams'. A list of a list is essentially a pointer to a list, so if you delete the sublists,
+                        //the list of lists will have the correct number of elements, but they will all be empty
+                        beamsPerIso.Add(new List<Beam>(beams));
+                        beams.Clear();
+                    }
+                }
+                //add the current beam to the sublist
+                beams.Add(b);
+                PreviosIsoZ = v.z;
+            }
+            //add the beams from the last isocenter to the vmat beams per iso list
+            beamsPerIso.Add(new List<Beam>(beams));
+            return beamsPerIso;
+        }
+
+        /// <summary>
+        /// Helper method to calculate the shifts between isocenters for the supplied list of isocenters
+        /// </summary>
+        /// <param name="isoPositions"></param>
+        /// <returns></returns>
+        public static List<VVector> CalculateShifts(List<VVector> isoPositions, VVector uOrigin)
+        {
+            List<VVector> shifts = new List<VVector> { };
+
+            double SupInfShifts;
+            double AntPostShifts;
+            double LRShifts;
+            double priorSupInfPos = uOrigin.z;
+            double priorAntPostPos = uOrigin.y;
+            double priorLRPos = uOrigin.x;
+            int count = 0;
+            foreach (VVector pos in isoPositions)
+            {
+                //copy shift from CT ref to sup-inf shifts for first element, otherwise calculate the separation between the current and previous iso (from sup to inf direction)
+                //calculate the relative shifts between isocenters (the first isocenter is the CTrefShift)
+                SupInfShifts = (pos.z - priorSupInfPos) / 10;
+                AntPostShifts = (pos.y - priorAntPostPos) / 10;
+                LRShifts = (pos.x - priorLRPos) / 10;
+                priorSupInfPos = pos.z;
+                priorAntPostPos = pos.y;
+                priorLRPos = pos.x;
+
+                shifts.Add(new VVector(LRShifts, AntPostShifts, SupInfShifts));
+                count++;
+            }
+            return shifts;
+        }
+    }
+}

@@ -1,0 +1,571 @@
+﻿using AutoPlannerHelpers.Delegates;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Windows.Media.Media3D;
+using VMS.TPS.Common.Model.API;
+using VMS.TPS.Common.Model.Types;
+using AutoPlannerHelpers.Context;
+using AutoPlannerHelpers.Enums;
+using AutoPlannerHelpers.Models;
+
+namespace AutoPlannerHelpers.Helpers
+{
+    public static class ContourHelper
+    {
+        public static bool ExecuteStructureOperations(IEnumerable<StructureOperationModel> operations, ProvideUIUpdateDelegate ProvideUIUpdate = null, UIUpdateMessageOnlyDelegate UIUD = null)
+        {
+            int percentCompletion = 0;
+            int calcItems = operations.Count();
+            foreach (StructureOperationModel itr in operations)
+            {
+                if (itr.IsValidOperation)
+                {
+                    if (!ReferenceEquals(ProvideUIUpdate, null))
+                    {
+                        ProvideUIUpdate(100 * ++percentCompletion / calcItems, $"Performing: {itr.FriendlyName}");
+                    }
+                    if (PerformStructureOperation(itr, UIUD)) return true;
+                }
+                else
+                {
+                    if (!ReferenceEquals(ProvideUIUpdate, null))
+                    {
+                        ProvideUIUpdate(100 * ++percentCompletion / calcItems, $"Warning! {itr.FriendlyName} is not a valid operation! Skipping!");
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static bool PerformStructureOperation(StructureOperationModel structureOperation, UIUpdateMessageOnlyDelegate ProvideUIUpdate = null)
+        {
+            if (!EclipseContext.GetInstance().IsInitialized || ReferenceEquals(EclipseContext.GetInstance().StructureSet, null))
+            {
+                throw new Exception("Error! Eclipse context not initialized! Unable to perform structure derivations!");
+            }
+            if (StructureTuningHelper.DoesStructureExistInSS(structureOperation.StructureA, true) && structureOperation.MarginA.IsValidMargin && (structureOperation.Operation == StructureDerivationOperation.CopyContractExpand || (StructureTuningHelper.DoesStructureExistInSS(structureOperation.StructureB, true)  && structureOperation.MarginB.IsValidMargin)))
+            {
+                Structure StructureA = StructureTuningHelper.GetStructureFromId(structureOperation.StructureA);
+                Structure StructureB = StructureTuningHelper.GetStructureFromId(structureOperation.StructureB);
+                Structure OutputStructure = StructureTuningHelper.GetStructureFromId(structureOperation.OutputStructure, true);
+                switch (structureOperation.Operation)
+                {
+                    case StructureDerivationOperation.Intersection:
+                        OutputStructure.SegmentVolume = ContourIntersection(StructureA, StructureB, structureOperation.MarginA, structureOperation.MarginB);
+                        break;
+                    case StructureDerivationOperation.Union:
+                        OutputStructure.SegmentVolume = ContourUnion(StructureA, StructureB, structureOperation.MarginA, structureOperation.MarginB);
+                        break;
+                    case StructureDerivationOperation.Crop:
+                        OutputStructure.SegmentVolume = CropStructureFromStructure(StructureA, StructureB, structureOperation.MarginA, structureOperation.MarginB);
+                        break;
+                    case StructureDerivationOperation.XOR:
+                        OutputStructure.SegmentVolume = ContourXOR(StructureA, StructureB, structureOperation.MarginA, structureOperation.MarginB);
+                        break;
+                    case StructureDerivationOperation.CutInferiorTo:
+                        OutputStructure.SegmentVolume = CopyStructure(StructureA, new StructureMarginModel(0));
+                        OutputStructure.SegmentVolume = CutStructureInfToStructure(OutputStructure, StructureB);
+                        break;
+                    case StructureDerivationOperation.CutSuperiorTo:
+                        OutputStructure.SegmentVolume = CopyStructure(StructureA, new StructureMarginModel(0));
+                        OutputStructure.SegmentVolume = CutStructureSupToStructure(OutputStructure, StructureB);
+                        break;
+                    case StructureDerivationOperation.CutLateralTo:
+                        OutputStructure.SegmentVolume = CutStructureLateralToStructure(StructureA, StructureB);
+                        break;
+                    case StructureDerivationOperation.CopyContractExpand:
+                        OutputStructure.SegmentVolume = CopyStructure(StructureA, structureOperation.MarginA);
+                        break;
+                }
+                if (OutputStructure.IsEmpty)
+                {
+                    if(!ReferenceEquals(ProvideUIUpdate, null))
+                    {
+                        ProvideUIUpdate($"Warning! Output structure ({OutputStructure.Id}) is empty following {structureOperation.Operation} operation! Removing!");
+                    }
+                    EclipseContext.GetInstance().StructureSet.RemoveStructure(OutputStructure);
+                }
+            }
+            else
+            {
+                if (!ReferenceEquals(ProvideUIUpdate, null))
+                {
+                    ProvideUIUpdate($"Error! Missing required structures for derivation or margins are not valid! Exiting!", true);
+                    ProvideUIUpdate($"{structureOperation.FriendlyName}");
+                }
+                return true;
+            }
+            return false;
+        }
+
+        private static SegmentVolume ContourIntersection(Structure a, Structure b, StructureMarginModel marginA, StructureMarginModel marginB)
+        {
+            //margin is in cm
+            if (!ReferenceEquals(a, null) && !ReferenceEquals(b, null)) return a.SegmentVolume.AsymmetricMargin(marginA.AxisAlignedMargins).And(b.SegmentVolume.AsymmetricMargin(marginB.AxisAlignedMargins));
+            return null;
+        }
+
+        private static SegmentVolume ContourUnion(Structure a, Structure b, StructureMarginModel marginA, StructureMarginModel marginB)
+        {
+            //margin is in cm
+            if (!ReferenceEquals(a, null) && !ReferenceEquals(b, null)) return a.SegmentVolume.AsymmetricMargin(marginA.AxisAlignedMargins).Or(b.SegmentVolume.AsymmetricMargin(marginB.AxisAlignedMargins));
+            return null;
+        }
+
+        private static SegmentVolume CropStructureFromStructure(Structure a, Structure b, StructureMarginModel marginA, StructureMarginModel marginB)
+        {
+            //margin is in cm
+            if (!ReferenceEquals(a, null) && !ReferenceEquals(b, null)) return a.SegmentVolume.AsymmetricMargin(marginA.AxisAlignedMargins).Sub(b.SegmentVolume.AsymmetricMargin(marginB.AxisAlignedMargins));
+            return null;
+        }
+
+        private static SegmentVolume ContourXOR(Structure a, Structure b, StructureMarginModel marginA, StructureMarginModel marginB)
+        {
+            //margin is in cm
+            if (!ReferenceEquals(a, null) && !ReferenceEquals(b, null)) return a.SegmentVolume.AsymmetricMargin(marginA.AxisAlignedMargins).Xor(b.SegmentVolume.AsymmetricMargin(marginB.AxisAlignedMargins));
+            return null;
+        }
+
+        /// <summary>
+        /// Cut structure a inferior to structure b (i.e., remove all contours beyond the inferior-most slice of structure b)
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private static SegmentVolume CutStructureInfToStructure(Structure a, Structure b)
+        {
+            int slice = CalculationHelper.ComputeSlice(b.MeshGeometry.Positions.Min(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+            for (int i = 0; i < slice; i++)
+            {
+                a.ClearAllContoursOnImagePlane(i);
+            }
+            return a.SegmentVolume;
+        }
+
+        /// <summary>
+        /// Cut structure a superior to structure b (i.e., remove all contours beyond the superior-most slice of structure b)
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private static SegmentVolume CutStructureSupToStructure(Structure a, Structure b)
+        {
+            int slice = CalculationHelper.ComputeSlice(b.MeshGeometry.Positions.Max(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+            for (int i = EclipseContext.GetInstance().StructureSet.Image.ZSize - 1; i > slice; i--)
+            {
+                a.ClearAllContoursOnImagePlane(i);
+            }
+            return a.SegmentVolume;
+        }
+
+        /// <summary>
+        /// Cut structure a laterally to structure b within the sup/inf extent of structure b (i.e., remove all contour points OUTSIDE the maximum x-lateral extent of structure b)
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private static SegmentVolume CutStructureLateralToStructure(Structure a, Structure b)
+        {
+            VVector[] lateralBounds = GetLateralBoundingBoxForStructure(b, 0.0);
+            double xmax = lateralBounds.Max(p => p.x);
+            double xmin = lateralBounds.Min(p => p.x);
+            int startSlice = CalculationHelper.ComputeSlice(b.MeshGeometry.Positions.Min(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+            int stopSlice = CalculationHelper.ComputeSlice(b.MeshGeometry.Positions.Max(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+            for(int i = startSlice; i <= stopSlice; i++)
+            {
+                VVector[][] apoints = a.GetContoursOnImagePlane(i);
+                a.ClearAllContoursOnImagePlane(i);
+                VVector[][] newapoints = new VVector[apoints.GetLength(0)][];
+                foreach (VVector[] itr in apoints)
+                {
+                    if(itr.Any(p => p.x >= xmin && p.x <= xmax))
+                    {
+                        //some of the contour points are contained within the lateral x bounds of structure b
+                        List<VVector> newPoints = new List<VVector> { };
+                        if (!itr.All(p => p.x >= xmin && p.x <= xmax))
+                        {
+                            //not all contour points are contained within the lateral x bounds of structure b --> truncate points outside of bounds
+                            foreach (VVector point in itr)
+                            {
+                                double newX = point.x;
+                                if (newX > xmax)
+                                {
+                                    newX = xmax;
+                                }
+                                else if (newX < xmin)
+                                {
+                                    newX = xmin;
+                                }
+                                newPoints.Add(new VVector(newX, point.y, point.z));
+                            }
+                        }
+                        else
+                        {
+                            //all contour points are contained within the lateral x bounds of structure b --> add entire array
+                            newPoints.AddRange(itr);
+                        }
+                        
+                        if(newPoints.Any(p => a.IsPointInsideSegment(p)))
+                        {
+                            a.SubtractContourOnImagePlane(newPoints.ToArray(), i);
+                        }
+                        else
+                        {
+                            a.AddContourOnImagePlane(newPoints.ToArray(), i);
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static SegmentVolume CopyStructure(Structure a, StructureMarginModel marginA)
+        {
+            if (!ReferenceEquals(a, null)) return a.AsymmetricMargin(marginA.AxisAlignedMargins);
+            return null;
+        }
+
+        /// <summary>
+        /// Helper method to crop the given structure from the body structure
+        /// </summary>
+        /// <param name="theStructure"></param>
+        /// <param name="EclipseContext.GetInstance().StructureSet"></param>
+        /// <param name="marginInCm"></param>
+        /// <returns></returns>
+        public static bool CropStructureFromBody(string theStructure, double marginInCm, UIUpdateMessageOnlyDelegate ProvideUIUpdate)
+        {
+            StructureOperationModel model = new StructureOperationModel
+            {
+                StructureA = theStructure,
+                MarginA = new StructureMarginModel(0),
+                Operation = StructureDerivationOperation.Intersection,
+                StructureB = "body",
+                MarginB = new StructureMarginModel(marginInCm),
+                OutputStructure = theStructure
+            };
+            return PerformStructureOperation(model, ProvideUIUpdate);
+        }
+
+        public static void CleanTemporaryStructures(IEnumerable<StructureOperationModel> operations)
+        {
+            if (!EclipseContext.GetInstance().IsInitialized || ReferenceEquals(EclipseContext.GetInstance().StructureSet, null))
+            {
+                throw new Exception("Error! Eclipse context not initialized! Unable to clean structure derivations!");
+            }
+            foreach (StructureOperationModel itr in operations.Where(x => x.IsTemporary))
+            {
+                if(StructureTuningHelper.DoesStructureExistInSS(itr.OutputStructure))
+                {
+                    if(EclipseContext.GetInstance().StructureSet.CanRemoveStructure(StructureTuningHelper.GetStructureFromId(itr.OutputStructure)))
+                    {
+                        EclipseContext.GetInstance().StructureSet.RemoveStructure(StructureTuningHelper.GetStructureFromId(itr.OutputStructure));
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper mthod to create a ring structure from the supplied target structure using specified margin and thickness values
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="ring"></param>
+        /// <param name="EclipseContext.GetInstance().StructureSet"></param>
+        /// <param name="marginInCm"></param>s
+        /// <param name="thickness"></param>
+        /// <returns></returns>
+        public static bool CreateRing(string target, string ring, double marginInCm, double thickness, UIUpdateMessageOnlyDelegate ProvideUIUpdate)
+        {
+            List<StructureOperationModel> operations = new List<StructureOperationModel>
+            {
+                new StructureOperationModel(target, StructureDerivationOperation.CopyContractExpand, ring, new StructureMarginModel(thickness + marginInCm)),
+                new StructureOperationModel(ring, StructureDerivationOperation.Crop, target, ring, new StructureMarginModel(0), new StructureMarginModel(marginInCm)),
+                new StructureOperationModel(ring, StructureDerivationOperation.Intersection, "body", ring)
+            };
+
+            foreach (StructureOperationModel itr in operations)
+            {
+                if (itr.IsValidOperation)
+                {
+                    ProvideUIUpdate($"Performing: {itr.FriendlyName}");
+                    if (PerformStructureOperation(itr, ProvideUIUpdate)) return true;
+                }
+                else ProvideUIUpdate($"Warning! {itr.FriendlyName} is not a valid operation! Skipping!");
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to contour the overlap between two structures and union it with the unionStructure ONTO the unionStructure
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="normal"></param>
+        /// <param name="unionStructure"></param>
+        /// <param name="EclipseContext.GetInstance().StructureSet"></param>
+        /// <param name="marginInCm"></param>
+        /// <returns></returns>
+        public static (bool, StringBuilder) ContourOverlapAndUnion(Structure target, Structure normal, Structure unionStructure, double marginInCm)
+        {
+            StringBuilder sb = new StringBuilder();
+            bool fail = false;
+            //margin is in cm
+            if (!ReferenceEquals(target, null) && !ReferenceEquals(normal, null))
+            {
+                if (marginInCm >= -5.0 && marginInCm <= 5.0)
+                {
+                    Structure dummy = EclipseContext.GetInstance().StructureSet.AddStructure("CONTROL", "Dummy");
+                    dummy.SegmentVolume = target.And(normal.Margin(marginInCm * 10));
+                    unionStructure.SegmentVolume = unionStructure.SegmentVolume.Or(dummy.SegmentVolume.Margin(0.0));
+                    EclipseContext.GetInstance().StructureSet.RemoveStructure(dummy);
+                }
+                else
+                {
+                    sb.AppendLine("Added margin MUST be within +/- 5.0 cm!");
+                    fail = true;
+                }
+            }
+            else
+            {
+                sb.AppendLine("Error either target or normal structures are missing! Can't contour overlap between target and normal structure!");
+                fail = true;
+            }
+            return (fail, sb);
+        }
+
+        /// <summary>
+        /// Helper method to generate a margin for a structure on the given CT slice using the supplied contour points at the specified distance
+        /// </summary>
+        /// <param name="points"></param>
+        /// <param name="distance"></param>
+        /// <returns></returns>
+        public static VVector[] GenerateContourPoints(VVector[] points, double distance)
+        {
+            VVector[] newPoints = new VVector[points.GetLength(0)];
+            double centerX = (points.Max(p => p.x) + points.Min(p => p.x)) / 2;
+            double centerY = (points.Max(p => p.y) + points.Min(p => p.y)) / 2;
+            for (int i = 0; i < points.GetLength(0); i++)
+            {
+                double r = Math.Sqrt(Math.Pow(points[i].x - centerX, 2) + Math.Pow(points[i].y - centerY, 2));
+                VVector u = new VVector((points[i].x - centerX) / r, (points[i].y - centerY) / r, 0);
+                newPoints[i] = new VVector(u.x * (r + distance) + centerX, u.y * (r + distance) + centerY, 0);
+                //ProvideUIUpdate($"{points[i][j].x - centerX:0.00}, {points[i][j].y - centerY:0.00}, {r:0.00}, {u.x:0.00}, {u.y:0.00}, {centerX:0.00}, {centerY:0.00}");
+            }
+            return newPoints;
+        }
+
+        /// <summary>
+        /// Get the maximum lateral project of the supplied structure in the anterior-posterior and lateral directions at the given isocenter location
+        /// </summary>
+        /// <param name="target"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public static (double, StringBuilder) GetMaxLatProjectionDistance(Structure target, VVector isoPos)
+        {
+            StringBuilder sb = new StringBuilder();
+            double maxDimension = 0;
+            Point3DCollection pts = target.MeshGeometry.Positions;
+            if (Math.Abs(pts.Max(p => p.X) - isoPos.x) > maxDimension) maxDimension = Math.Abs(pts.Max(p => p.X) - isoPos.x);
+            if (Math.Abs(pts.Min(p => p.X) - isoPos.x) > maxDimension) maxDimension = Math.Abs(pts.Min(p => p.X) - isoPos.x);
+            if (Math.Abs(pts.Max(p => p.Y) - isoPos.y) > maxDimension) maxDimension = Math.Abs(pts.Max(p => p.Y) - isoPos.y);
+            if (Math.Abs(pts.Min(p => p.Y) - isoPos.y) > maxDimension) maxDimension = Math.Abs(pts.Min(p => p.Y) - isoPos.y);
+            sb.AppendLine($"Iso position: ({isoPos.x:0.0}, {isoPos.y:0.0}, {isoPos.z:0.0}) mm");
+            sb.AppendLine($"Max lateral dimension: {maxDimension:0.0} mm");
+            return (maxDimension, sb);
+        }
+
+        /// <summary>
+        /// Get the maximum lateral projection of a structure in the anterior-posterior and lateral directions using the supplied bounding box for the structure at the given isocenter location
+        /// </summary>
+        /// <param name="boundingBox"></param>
+        /// <param name="v"></param>
+        /// <returns></returns>
+        public static (double, StringBuilder) GetMaxLatProjectionDistance(VVector[] boundingBox, VVector isoPos)
+        {
+            StringBuilder sb = new StringBuilder();
+            double maxDimension = 0;
+            if (Math.Abs(boundingBox.Max(p => p.x) - isoPos.x) > maxDimension) maxDimension = Math.Abs(boundingBox.Max(p => p.x) - isoPos.x);
+            if (Math.Abs(boundingBox.Min(p => p.x) - isoPos.x) > maxDimension) maxDimension = Math.Abs(boundingBox.Min(p => p.x) - isoPos.x);
+            if (Math.Abs(boundingBox.Max(p => p.y) - isoPos.y) > maxDimension) maxDimension = Math.Abs(boundingBox.Max(p => p.y) - isoPos.y);
+            if (Math.Abs(boundingBox.Min(p => p.y) - isoPos.y) > maxDimension) maxDimension = Math.Abs(boundingBox.Min(p => p.y) - isoPos.y);
+            sb.AppendLine($"Iso position: ({isoPos.x:0.0}, {isoPos.y:0.0}, {isoPos.z:0.0}) mm");
+            sb.AppendLine($"Max lateral dimension: {maxDimension:0.0} mm");
+            return (maxDimension, sb);
+        }
+
+        /// <summary>
+        /// Create a 2D bounding box for the specified target in the ant-post and lateral directions with added margin (in cm)
+        /// </summary>
+        /// <param name="theStructure"></param>
+        /// <param name="addedMargin"></param>
+        /// <returns></returns>
+        public static VVector[] GetLateralBoundingBoxForStructure(Structure theStructure, double addedMargin = 0.0)
+        {
+            VVector[] boundingBox;
+
+            Point3DCollection pts = theStructure.MeshGeometry.Positions;
+            double xMax = pts.Max(p => p.X) + addedMargin * 10;
+            double xMin = pts.Min(p => p.X) - addedMargin * 10;
+            double yMax = pts.Max(p => p.Y) + addedMargin * 10;
+            double yMin = pts.Min(p => p.Y) - addedMargin * 10;
+
+            boundingBox = new[] {
+                                new VVector(xMax, yMax, 0),
+                                new VVector(xMax, 0, 0),
+                                new VVector(xMax, yMin, 0),
+                                new VVector(0, yMin, 0),
+                                new VVector(xMin, yMin, 0),
+                                new VVector(xMin, 0, 0),
+                                new VVector(xMin, yMax, 0),
+                                new VVector(0, yMax, 0)};
+
+            return boundingBox;
+        }
+
+        /// <summary>
+        /// Helper method to check if the supplied list of structures exist and are high resolution
+        /// </summary>
+        /// <param name="baseTargets"></param>
+        /// <returns></returns>
+        public static bool CheckHighResolutionAndConvert(List<string> structures, ProvideUIUpdateDelegate ProvideUIUpdate)
+        {
+            ProvideUIUpdate(0, "Checking for high res structures:");
+            foreach (string itr in structures)
+            {
+                if (StructureTuningHelper.DoesStructureExistInSS(itr, true))
+                {
+                    Structure tmp = StructureTuningHelper.GetStructureFromId(itr);
+                    ProvideUIUpdate(0, $"Checking if {tmp.Id} is high resolution");
+                    if (tmp.IsHighResolution)
+                    {
+                        string id = tmp.Id;
+                        ProvideUIUpdate(0, $"{id} is high resolution. Converting to default resolution now");
+
+                        if (OverWriteHighResStructureWithLowResStructure(tmp, ProvideUIUpdate))
+                        {
+                            ProvideUIUpdate(0, $"Error! Unable to overwrite existing high res structure {tmp.Id} with default resolution structure! Exiting!", true);
+                            return true;
+                        }
+                        ProvideUIUpdate(0, $"{id} has been converted to low resolution");
+                    }
+                    else
+                    {
+                        ProvideUIUpdate(0, $"{tmp.Id} is already defualt resolution");
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Method to take a high resolution structure as input and overwrite it with a new structure that is default resolution
+        /// </summary>
+        /// <param name="theStructure"></param>
+        /// <returns></returns>
+        private static bool OverWriteHighResStructureWithLowResStructure(Structure theStructure, ProvideUIUpdateDelegate ProvideUIUpdate)
+        {
+            ProvideUIUpdate(0, $"Retrieving all contour points for: {theStructure.Id}");
+            int startSlice = CalculationHelper.ComputeSlice(theStructure.MeshGeometry.Positions.Min(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+            int stopSlice = CalculationHelper.ComputeSlice(theStructure.MeshGeometry.Positions.Max(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+            ProvideUIUpdate(0, $"Start slice: {startSlice}");
+            ProvideUIUpdate(0, $"Stop slice: {stopSlice}");
+            VVector[][][] structurePoints = GetAllContourPoints(theStructure, startSlice, stopSlice, ProvideUIUpdate);
+            ProvideUIUpdate(0, $"Contour points for: {theStructure.Id} loaded");
+
+            ProvideUIUpdate(0, $"Removing and re-adding {theStructure.Id} to structure set");
+            (bool fail, Structure lowResStructure) = RemoveAndReAddStructure(theStructure, ProvideUIUpdate);
+            if (fail) return true;
+
+            ProvideUIUpdate(0, $"Contouring {lowResStructure.Id} now");
+            ContourLowResStructure(structurePoints, lowResStructure, startSlice, stopSlice, ProvideUIUpdate);
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to remove the supplied high resolution structure, then add a new structure with the same id as the high resolution 
+        /// structure (automatically defaults to default resolution)
+        /// </summary>
+        /// <param name="theStructure"></param>
+        /// <returns></returns>
+        private static (bool, Structure) RemoveAndReAddStructure(Structure theStructure, ProvideUIUpdateDelegate ProvideUIUpdate)
+        {
+            ProvideUIUpdate(0, "Removing and re-adding structure:");
+            Structure newStructure = null;
+            string id = theStructure.Id;
+            string dicomType = theStructure.DicomType;
+            if (EclipseContext.GetInstance().StructureSet.CanRemoveStructure(theStructure))
+            {
+                EclipseContext.GetInstance().StructureSet.RemoveStructure(theStructure);
+                if (EclipseContext.GetInstance().StructureSet.CanAddStructure(dicomType, id))
+                {
+                    newStructure = EclipseContext.GetInstance().StructureSet.AddStructure(dicomType, id);
+                    ProvideUIUpdate(0, $"{newStructure.Id} has been added to the structure set");
+                }
+                else
+                {
+                    ProvideUIUpdate(0, $"Could not re-add structure: {id}. Exiting", true);
+                    return (true, newStructure);
+                }
+            }
+            else
+            {
+                ProvideUIUpdate(0, $"Could not remove structure: {id}. Exiting", true);
+                return (true, newStructure);
+            }
+            return (false, newStructure);
+        }
+
+        /// <summary>
+        /// Similar to the contourlowresstructure method in generatetsbase, except instead of supplying the high res structure as an
+        /// input argument, the contour points for the high res structure are directly supplied
+        /// </summary>
+        /// <param name="structurePoints"></param>
+        /// <param name="lowResStructure"></param>
+        /// <param name="startSlice"></param>
+        /// <param name="stopSlice"></param>
+        /// <returns></returns>
+        private static bool ContourLowResStructure(VVector[][][] structurePoints, Structure lowResStructure, int startSlice, int stopSlice, ProvideUIUpdateDelegate ProvideUIUpdate)
+        {
+            ProvideUIUpdate(0, $"Contouring {lowResStructure.Id}:");
+            //Write the high res contour points on the newly added low res structure
+            int percentComplete = 0;
+            int calcItems = stopSlice - startSlice + 1;
+            for (int slice = startSlice; slice <= stopSlice; slice++)
+            {
+                VVector[][] points = structurePoints[percentComplete];
+                for (int i = 0; i < points.GetLength(0); i++)
+                {
+                    if (lowResStructure.IsPointInsideSegment(points[i][0]) ||
+                        lowResStructure.IsPointInsideSegment(points[i][points[i].GetLength(0) - 1]) ||
+                        lowResStructure.IsPointInsideSegment(points[i][(int)(points[i].GetLength(0) / 2)]))
+                    {
+                        lowResStructure.SubtractContourOnImagePlane(points[i], slice);
+                    }
+                    else lowResStructure.AddContourOnImagePlane(points[i], slice);
+                }
+                ProvideUIUpdate(100 * ++percentComplete / calcItems);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to retrive the contour points for the supplied structure on all contoured CT slices
+        /// </summary>
+        /// <param name="theStructure"></param>
+        /// <param name="startSlice"></param>
+        /// <param name="stopSlice"></param>
+        /// <returns></returns>
+        public static VVector[][][] GetAllContourPoints(Structure theStructure, int startSlice, int stopSlice, ProvideUIUpdateDelegate ProvideUIUpdate)
+        {
+            int percentComplete = 0;
+            int calcItems = stopSlice - startSlice + 1;
+            VVector[][][] structurePoints = new VVector[stopSlice - startSlice + 1][][];
+            for (int slice = startSlice; slice <= stopSlice; slice++)
+            {
+                structurePoints[percentComplete++] = theStructure.GetContoursOnImagePlane(slice);
+                ProvideUIUpdate(100 * percentComplete / calcItems);
+            }
+            return structurePoints;
+        }
+    }
+}

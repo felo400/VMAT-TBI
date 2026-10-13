@@ -1,0 +1,70 @@
+name: Compilar para Eclipse 16.1
+
+# Se ejecuta manualmente (pestaña Actions -> "Run workflow") o al subir cambios a main/master.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Verificar DLL de ESAPI 16.1
+        shell: pwsh
+        run: |
+          $dir = "VMATTBICSITMLIAutoPlanner\Resources\16.1"
+          foreach ($f in @("VMS.TPS.Common.Model.API.dll","VMS.TPS.Common.Model.Types.dll")) {
+            if (-not (Test-Path (Join-Path $dir $f))) {
+              throw "Falta $dir\$f. Suba las DLL de ESAPI 16.1 (C:\Program Files (x86)\Varian\RTM\16.1\esapi\API\) a esa carpeta del repositorio."
+            }
+          }
+
+      - name: Configurar NuGet (solo nuget.org)
+        working-directory: VMATTBICSITMLIAutoPlanner
+        shell: pwsh
+        run: |
+          @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <clear />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          "@ | Set-Content -Path "nuget.public.config" -Encoding UTF8
+
+      - name: Restaurar paquetes
+        working-directory: VMATTBICSITMLIAutoPlanner
+        run: msbuild "VMATTBICSITMLIAutoPlanner.ci.slnf" -t:Restore -p:RestoreConfigFile=nuget.public.config -p:Configuration=Release -p:Platform=x64 -p:ESAPIVersion=16.1
+
+      - name: Compilar (Release x64, ESAPI 16.1)
+        working-directory: VMATTBICSITMLIAutoPlanner
+        run: msbuild "VMATTBICSITMLIAutoPlanner.ci.slnf" /p:Configuration=Release /p:Platform="x64" /p:ESAPIVersion=16.1 /m
+
+      - name: Verificar resultado
+        shell: pwsh
+        run: |
+          $app = Join-Path $env:GITHUB_WORKSPACE "bin\VMAT-TBI-CSI-TMLI"
+          foreach ($exe in @("AutoPlannerLauncher.exe","CSIAutoPlanner.exe","TBIAutoPlanner.exe","TMLIAutoPlanner.exe","AutoPlannerOptimizationLoop.exe")) {
+            if (-not (Test-Path (Join-Path $app $exe))) { throw "No se generó $exe" }
+          }
+          # Las DLL de Varian NO se incluyen en el paquete (Eclipse las aporta en la estación)
+          Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "bin") -Recurse -Filter "VMS.TPS.*.dll" | Remove-Item -Force
+          Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "bin") -Recurse -Filter "*.pdb" | Remove-Item -Force
+          Copy-Item "LEEME_INSTALACION.md" (Join-Path $env:GITHUB_WORKSPACE "bin\")
+          "Compilado para Eclipse/ESAPI 16.1`nCommit: $env:GITHUB_SHA`nFecha: $(Get-Date -Format s)" | Out-File (Join-Path $app "version.txt") -Encoding utf8
+          Get-ChildItem -Path (Join-Path $env:GITHUB_WORKSPACE "bin") -Recurse | Select-Object FullName
+
+      - name: Publicar carpeta bin
+        uses: actions/upload-artifact@v4
+        with:
+          name: VMAT-AutoPlanner-Eclipse16.1-bin
+          path: bin/

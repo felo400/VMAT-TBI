@@ -1,0 +1,30 @@
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace ImportListener
+{
+    public static class ImportListenerHelper
+    {
+        /// <summary>
+        /// Simple logic to parse the input string array of arguments. At least 7 arguments must be passed, the 8th is optional
+        /// </summary>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static ImportSettingsModel ParseInputArguments(List<string> args)
+        {
+            ImportSettingsModel model = new ImportSettingsModel();
+            //9 arguments are always required (indices 0-8 are read below)
+            if (args.Count < 9) return model;
+            model.ImportPath = args.ElementAt(0);
+            model.MRN = args.ElementAt(1);
+            model.AriaDBAET = args.ElementAt(2);
+            model.AriaDBIP = args.ElementAt(3);
+            model.AriaDBPort = int.Parse(args.ElementAt(4), System.Globalization.CultureInfo.InvariantCulture);
+            model.LocalAET = args.ElementAt(5);
+            model.LocalPort = int.Parse(args.ElementAt(6), System.Globalization.CultureInfo.InvariantCulture);
+            model.TimeoutSec = double.Parse(args.ElementAt(7), System.Globalization.CultureInfo.InvariantCulture);
+            model.PatientPlanType = args.ElementAt(8);
+            return model;
+        }
+    }
+}

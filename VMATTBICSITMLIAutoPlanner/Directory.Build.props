@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Ruta a las DLL de ESAPI (Eclipse Scripting API) usadas para compilar TODOS los proyectos de la solución.
+  Path to the ESAPI DLLs used to compile EVERY project in the solution.
+
+  Orden de búsqueda / search order:
+    1) Propiedad pasada explícitamente:  msbuild /p:ESAPIDir="D:\mis_dll\"
+    2) Instalación local de Eclipse 16.1: C:\Program Files (x86)\Varian\RTM\16.1\esapi\API\
+    3) Copia local dentro de la solución:  Resources\16.1\   (copie aquí las DLL si compila en un PC sin Eclipse)
+
+  IMPORTANTE: compile SIEMPRE contra las DLL de SU versión de Eclipse (16.1). Las DLL de 15.6 incluidas
+  en Resources\15.6 son las del autor original y NO deben usarse para un sistema 16.1.
+-->
+<Project>
+  <PropertyGroup>
+    <ESAPIVersion Condition="'$(ESAPIVersion)' == ''">16.1</ESAPIVersion>
+    <ESAPIDir Condition="'$(ESAPIDir)' == '' and Exists('C:\Program Files (x86)\Varian\RTM\$(ESAPIVersion)\esapi\API\VMS.TPS.Common.Model.API.dll')">C:\Program Files (x86)\Varian\RTM\$(ESAPIVersion)\esapi\API\</ESAPIDir>
+    <ESAPIDir Condition="'$(ESAPIDir)' == '' and Exists('$(MSBuildThisFileDirectory)Resources\$(ESAPIVersion)\VMS.TPS.Common.Model.API.dll')">$(MSBuildThisFileDirectory)Resources\$(ESAPIVersion)\</ESAPIDir>
+    <!-- make sure the path ends with a backslash -->
+    <ESAPIDir Condition="'$(ESAPIDir)' != '' and !HasTrailingSlash('$(ESAPIDir)')">$(ESAPIDir)\</ESAPIDir>
+  </PropertyGroup>
+
+  <Target Name="CheckESAPIDir" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="'$(ESAPIDir)' == '' or !Exists('$(ESAPIDir)VMS.TPS.Common.Model.API.dll')"
+           Text="No se encontraron las DLL de ESAPI $(ESAPIVersion). Copie VMS.TPS.Common.Model.API.dll y VMS.TPS.Common.Model.Types.dll desde 'C:\Program Files (x86)\Varian\RTM\$(ESAPIVersion)\esapi\API\' de una estación de Eclipse a la carpeta 'Resources\$(ESAPIVersion)\' de la solución, o compile con /p:ESAPIDir=&quot;ruta\&quot;. (ESAPI $(ESAPIVersion) DLLs not found.)" />
+  </Target>
+</Project>

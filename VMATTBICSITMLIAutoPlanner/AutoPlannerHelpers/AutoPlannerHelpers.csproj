@@ -1,0 +1,359 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{75860997-C5F3-4D38-A945-F63771FE5625}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AutoPlannerHelpers</RootNamespace>
+    <AssemblyName>AutoPlannerHelpers</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>false</Deterministic>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\..\bin\VMAT-TBI-CSI-TMLI\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>preview</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>..\..\bin\VMAT-TBI-CSI-TMLI\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>preview</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="PresentationCore"/>
+    <Reference Include="PresentationFramework"/>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml"/>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="VMS.TPS.Common.Model.API">
+      <HintPath>$(ESAPIDir)VMS.TPS.Common.Model.API.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="VMS.TPS.Common.Model.Types">
+      <HintPath>$(ESAPIDir)VMS.TPS.Common.Model.Types.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="WindowsBase"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BaseCore\GeneratePlansAndPlaceBeamsBase.cs" />
+    <Compile Include="BaseCore\GeneratePreliminaryTargetsBase.cs" />
+    <Compile Include="BaseCore\PlanPreparationBase.cs" />
+    <Compile Include="BaseCore\TSGenerationManipulationBase.cs" />
+    <Compile Include="BaseViewModel\BaseViewModel.cs" />
+    <Compile Include="Context\EclipseContext.cs" />
+    <Compile Include="Context\EclipseContextHelper.cs" />
+    <Compile Include="Context\PatientMetaData.cs" />
+    <Compile Include="Delegates\AllDelegates.cs" />
+    <Compile Include="Enums\AllEnums.cs" />
+    <Compile Include="EnumTypeHelpers\DVHMetricTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\ExportFormatTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\FlashTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\InequalityOperatorHelper.cs" />
+    <Compile Include="EnumTypeHelpers\OptimizationTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\StructureMarginTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\StructureOperationTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\TSManipulationTypeHelper.cs" />
+    <Compile Include="EnumTypeHelpers\UnitsTypeHelper.cs" />
+    <Compile Include="EqualityComparers\RequestedTSStructureModelComparer.cs" />
+    <Compile Include="Helpers\CalculationHelper.cs" />
+    <Compile Include="Helpers\ConfigurationHelper.cs" />
+    <Compile Include="Helpers\ContourHelper.cs" />
+    <Compile Include="Helpers\CTImageExport.cs" />
+    <Compile Include="Helpers\CTExportCheckHelper.cs" />
+    <Compile Include="Helpers\CultureHelper.cs" />
+    <Compile Include="Helpers\DocumentationHelper.cs" />
+    <Compile Include="Helpers\ESAPIWorker.cs" />
+    <Compile Include="Helpers\ImportListenerHelper.cs" />
+    <Compile Include="Helpers\IsoNameHelper.cs" />
+    <Compile Include="Helpers\LogHelper.cs" />
+    <Compile Include="Helpers\OptimizationLoopHelper.cs" />
+    <Compile Include="Helpers\OptimizationSetupHelper.cs" />
+    <Compile Include="Helpers\PlanPrepHelper.cs" />
+    <Compile Include="Helpers\ScriptClosingHelper.cs" />
+    <Compile Include="Helpers\StringComparisonExtension.cs" />
+    <Compile Include="Helpers\StructureTuningHelper.cs" />
+    <Compile Include="Helpers\TargetsHelper.cs" />
+    <Compile Include="Interfaces\IPlanConstraint.cs" />
+    <Compile Include="Logging\Logger.cs" />
+    <Compile Include="Messengers\AllMessengers.cs" />
+    <Compile Include="Models\DaemonModel.cs" />
+    <Compile Include="Models\ExportCTModel.cs" />
+    <Compile Include="Models\FieldJunctionModel.cs" />
+    <Compile Include="Models\ImportExportDataModel.cs" />
+    <Compile Include="Models\IsocenterModel.cs" />
+    <Compile Include="Models\OptimizationConstraintModel.cs" />
+    <Compile Include="Models\OptTSCreationCriteriaModel.cs" />
+    <Compile Include="Models\PlanFieldJunctionModel.cs" />
+    <Compile Include="Models\PlanIsocenterModel.cs" />
+    <Compile Include="Models\PlanObjectiveModel.cs" />
+    <Compile Include="Models\PlanOptimizationSetupModel.cs" />
+    <Compile Include="Models\PlanTargetsModel.cs" />
+    <Compile Include="Models\PrescriptionModel.cs" />
+    <Compile Include="Models\RequestedOptimizationTSStructureModel.cs" />
+    <Compile Include="Models\RequestedPlanMetricModel.cs" />
+    <Compile Include="Models\RequestedTSManipulationModel.cs" />
+    <Compile Include="Models\SpecialOptimizationStructureModel.cs" />
+    <Compile Include="Models\StructureMarginModel.cs" />
+    <Compile Include="Models\StructureOperationModel.cs" />
+    <Compile Include="Models\TargetModel.cs" />
+    <Compile Include="Models\TSCoolerStructureModel.cs" />
+    <Compile Include="Models\TSHeaterStructureModel.cs" />
+    <Compile Include="Models\TSRingStructureModel.cs" />
+    <Compile Include="Models\TSTargetCropOverlapModel.cs" />
+    <Compile Include="Models\UnionStructureModel.cs" />
+    <Compile Include="Models\UnstructuredTargetModel.cs" />
+    <Compile Include="PlanTemplateModels\AutoPlanTemplateBase.cs" />
+    <Compile Include="PlanTemplateModels\CSIAutoPlanTemplate.cs" />
+    <Compile Include="PlanTemplateModels\TBIAutoPlanTemplate.cs" />
+    <Compile Include="PlanTemplateModels\TMLIAutoPlanTemplate.cs" />
+    <Compile Include="Prompts\ConfirmPrompt.xaml.cs">
+      <DependentUpon>ConfirmPrompt.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Prompts\EnterMissingInfoPrompt.xaml.cs">
+      <DependentUpon>EnterMissingInfoPrompt.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Prompts\SaveChangesPrompt.xaml.cs">
+      <DependentUpon>SaveChangesPrompt.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Prompts\SelectItemPrompt.xaml.cs">
+      <DependentUpon>SelectItemPrompt.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Settings\AutoPlannerHelperSettings.cs" />
+    <Compile Include="UIHelpers\ConfigurationUIHelper.cs" />
+    <Compile Include="ViewModels\AdditionalRingOperationViewModel.cs" />
+    <Compile Include="ViewModels\BeamPlacementViewModel.cs" />
+    <Compile Include="ViewModels\CTExportViewModel.cs" />
+    <Compile Include="ViewModels\ImportSSViewModel.cs" />
+    <Compile Include="ViewModels\ModifyMarginViewModel.cs" />
+    <Compile Include="ViewModels\ObservableCollectionPropertyNotify.cs" />
+    <Compile Include="ViewModels\OptimizationSetupViewModel.cs" />
+    <Compile Include="ViewModels\PlanPreparationViewModel.cs" />
+    <Compile Include="ViewModels\RingGenerationViewModel.cs" />
+    <Compile Include="ViewModels\ScriptConfigurationViewModel.cs" />
+    <Compile Include="ViewModels\SetTargetsViewModel.cs" />
+    <Compile Include="ViewModels\SimpleProgressWindowViewModel.cs" />
+    <Compile Include="ViewModels\StructureCropOverlapViewModel.cs" />
+    <Compile Include="ViewModels\StructureDerivationsViewModel.cs" />
+    <Compile Include="ViewModels\SpecialOptimizationStructuresViewModel.cs" />
+    <Compile Include="ViewModels\TSManipulationViewModel.cs" />
+    <Compile Include="Views\BeamPlacementView.xaml.cs">
+      <DependentUpon>BeamPlacementView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\AdditionalRingOperationView.xaml.cs">
+      <DependentUpon>AdditionalRingOperationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ModifyMarginView.xaml.cs">
+      <DependentUpon>ModifyMarginView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\CTExportView.xaml.cs">
+      <DependentUpon>CTExportView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\EnumBindingSourceExtension.cs" />
+    <Compile Include="Views\ImportSSView.xaml.cs">
+      <DependentUpon>ImportSSView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\OptimizationSetupView.xaml.cs">
+      <DependentUpon>OptimizationSetupView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\PlanPreparationView.xaml.cs">
+      <DependentUpon>PlanPreparationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\RingGenerationView.xaml.cs">
+      <DependentUpon>RingGenerationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ScriptConfigurationView.xaml.cs">
+      <DependentUpon>ScriptConfigurationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\ScrollViewerAttachedProperties.cs" />
+    <Compile Include="Views\SetTargetsView.xaml.cs">
+      <DependentUpon>SetTargetsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SimpleProgressWindowView.xaml.cs">
+      <DependentUpon>SimpleProgressWindowView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\StructureCropOverlapView.xaml.cs">
+      <DependentUpon>StructureCropOverlapView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\StructureDerivationsView.xaml.cs">
+      <DependentUpon>StructureDerivationsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\SpecialOptimizationStructuresView.xaml.cs">
+      <DependentUpon>SpecialOptimizationStructuresView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\TSManipulationView.xaml.cs">
+      <DependentUpon>TSManipulationView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\TupleConverter.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Prompts\ConfirmPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Prompts\EnterMissingInfoPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Prompts\SaveChangesPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Prompts\SelectItemPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\AllStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\EqualTabsTop.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\ScrollViewerStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\ScrollBarStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\ScrollThumbsStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\CheckBoxStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\ButtonStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\TextBoxStyle.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ViewStyles\EqualTabsLeft.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\BeamPlacementView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\AdditionalRingOperationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\ModifyMarginView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\CTExportView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\ImportSSView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\OptimizationSetupView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\PlanPreparationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\RingGenerationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\ScriptConfigurationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\SetTargetsView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\SimpleProgressWindowView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\StructureCropOverlapView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\StructureDerivationsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\SpecialOptimizationStructuresView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\TSManipulationView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm">
+      <Version>8.4.0</Version>
+    </PackageReference>
+    <PackageReference Include="EvilDICOM">
+      <Version>3.0.8998.340</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf">
+      <Version>1.1.135</Version>
+    </PackageReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>if NOT EXIST "$(ProjectDir)$(OutDir)\configuration\" (
+mkdir "$(ProjectDir)$(OutDir)\configuration\"
+)
+if NOT EXIST "$(ProjectDir)$(OutDir)\logs\" (
+mkdir "$(ProjectDir)$(OutDir)\logs\"
+)
+if NOT EXIST "$(ProjectDir)$(OutDir)\documentation\" (
+mkdir "$(ProjectDir)$(OutDir)\documentation\"
+)</PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(SolutionDir)Documentation\*" "$(ProjectDir)$(OutDir)\documentation"</PostBuildEvent>
+  </PropertyGroup>
+</Project>

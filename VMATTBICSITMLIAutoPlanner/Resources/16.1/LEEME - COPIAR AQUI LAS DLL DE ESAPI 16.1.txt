@@ -1,0 +1,7 @@
+Copie en esta carpeta las DLL de ESAPI de SU instalación de Eclipse 16.1:
+
+    C:\Program Files (x86)\Varian\RTM\16.1\esapi\API\VMS.TPS.Common.Model.API.dll
+    C:\Program Files (x86)\Varian\RTM\16.1\esapi\API\VMS.TPS.Common.Model.Types.dll
+
+Solo es necesario si compila la solución en un computador que NO tiene Eclipse instalado.
+Si compila en una estación con Eclipse 16.1, la solución encuentra las DLL automáticamente.

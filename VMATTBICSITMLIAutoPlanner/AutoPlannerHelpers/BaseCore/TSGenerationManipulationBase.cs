@@ -1,0 +1,486 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using AutoPlannerHelpers.Helpers;
+using AutoPlannerHelpers.Models;
+using System.Windows.Media.Media3D;
+using VMS.TPS.Common.Model.API;
+using VMS.TPS.Common.Model.Types;
+using AutoPlannerHelpers.Context;
+using AutoPlannerHelpers.ViewModels;
+using AutoPlannerHelpers.Delegates;
+using System.Runtime.ExceptionServices;
+
+namespace AutoPlannerHelpers.BaseCore
+{
+    public abstract class TSGenerationManipulationBase : SimpleProgressWindowViewModel
+    {
+        #region properties
+        public Dictionary<string, string> NormalizationVolumes { get; protected set; } = new Dictionary<string, string> { };
+        public List<PlanIsocenterModel> PlanIsocentersList { get; protected set; } = new List<PlanIsocenterModel> { };
+        public List<string> AddedStructureIds { get; protected set; } = new List<string> { };
+        public List<PlanTargetsModel> PlanTargets { get; protected set; } = new List<PlanTargetsModel> { };
+        public int NumberofIsocenters { get; protected set; } = -1;
+        public int NumberofVMATIsocenters { get; protected set; } = -1;
+        public string StrackTraceError { get; protected set; } = string.Empty;
+        #endregion
+
+        #region fields
+        protected List<PrescriptionModel> _prescriptions { get; set; } = new List<PrescriptionModel>();
+        protected List<StructureOperationModel> _structureOperations { get; set; } = new List<StructureOperationModel> { };
+        protected List<SpecialOptimizationStructureModel> _specialOptimizationStructures { get; set; } = new List<SpecialOptimizationStructureModel> { };
+        protected Dictionary<string, string> _highResStructureConversions { get; set; } = new Dictionary<string, string> { };
+        protected ProvideUIUpdateDelegate PUUD;
+        protected UIUpdateMessageOnlyDelegate UIUD;
+        #endregion
+
+        protected TSGenerationManipulationBase() 
+        {
+            PUUD = ProvideUIUpdate;
+            UIUD = ProvideUIUpdate;
+        }
+
+        /// <summary>
+        /// Run control
+        /// </summary>
+        /// <returns></returns>
+        //to handle system access exception violation
+        [HandleProcessCorruptedStateExceptions]
+        protected override bool Run()
+        {
+            try
+            {
+                PlanIsocentersList.Clear();
+                if (PreliminaryChecks()) return true;
+                if (StructureTuningHelper.UnionLRStructures(PUUD)) return true;
+                if (_structureOperations.Any()) if (CheckHighResolution()) return true;
+                if (RemoveOldTSStructures(_structureOperations)) return true;
+                if (CreateSpecialOptimizationStructures()) return true;
+                if (PerformStructureDerivations()) return true;
+                if (PerformPlanSpecificStructureDerivations()) return true;
+                if (CalculateNumIsos()) return true;
+                ContourHelper.CleanTemporaryStructures(_structureOperations);
+                UpdateUILabel("Finished!");
+                ProvideUIUpdate(100, "Finished Structure Tuning!");
+                ProvideUIUpdate($"Run time: {ElapsedRunTime} (mm:ss)");
+                return false;
+            }
+            catch (Exception e)
+            {
+                ProvideUIUpdate($"{e.Message}", true);
+                StrackTraceError = e.StackTrace;
+                return true;
+            }
+        }
+
+        #region virtual and abstract methods
+        protected abstract bool PreliminaryChecks();
+        protected abstract bool CreateSpecialOptimizationStructures();
+        protected abstract bool PerformStructureDerivations();
+        protected abstract bool CalculateNumIsos();
+        protected abstract bool PerformPlanSpecificStructureDerivations();
+        #endregion
+
+        #region helper functions related to TS generation and manipulation
+        /// <summary>
+        /// Helper method to retrieve a tuning/optimization structure target with id equal to TS_<targetId> or requestedTSTargetId
+        /// </summary>
+        /// <param name="targetId"></param>
+        /// <param name="requestedTSTargetId"></param>
+        /// <returns></returns>
+        protected Structure GetTSTarget(string targetId, string requestedTSTargetId = "")
+        {
+            string newName;
+            if (string.IsNullOrEmpty(requestedTSTargetId)) newName = $"TS_{targetId}";
+            else newName = requestedTSTargetId;
+            if (newName.Length > 16) newName = newName.Substring(0, 16);
+            ProvideUIUpdate($"Retrieving TS target: {newName}");
+            Structure addedTSTarget = StructureTuningHelper.GetStructureFromId(newName, true, "CONTROL");
+            if (addedTSTarget.IsEmpty)
+            {
+                if (StructureTuningHelper.DoesStructureExistInSS(targetId, true))
+                {
+                    ProvideUIUpdate($"Copying target {targetId} contours onto {newName}");
+                    addedTSTarget.SegmentVolume = ContourHelper.CopyStructure(StructureTuningHelper.GetStructureFromId(targetId),new StructureMarginModel(0));
+                }
+                else ProvideUIUpdate($"Error! Could not retrieve {targetId} structure!", true);
+            }
+            return addedTSTarget;
+        }
+
+        /// <summary>
+        /// Helper method to create and contour the requested ring structure (with user-supplied margin, thickness, and dose level)
+        /// </summary>
+        /// <returns></returns>
+        protected List<TSRingStructureModel> GenerateRings(List<TSRingStructureModel> requestedRings)
+        {
+            List<TSRingStructureModel> addedRings = new List<TSRingStructureModel>();
+            UpdateUILabel("Generating rings:");
+            ProvideUIUpdate("Generating requested ring structures for targets!");
+            int percentCompletion = 0;
+            int calcItems = 3 * requestedRings.Count();
+            foreach (TSRingStructureModel itr in requestedRings)
+            {
+                if (StructureTuningHelper.DoesStructureExistInSS(itr.TargetId, true))
+                {
+                    ProvideUIUpdate($"Contouring ring: TS_ring{itr.DoseLevel}");
+                    if (ContourHelper.CreateRing(itr.TargetId, $"TS_ring{itr.DoseLevel}", itr.MarginFromTargetInCM, itr.RingThicknessInCM, UIUD)) return new List<TSRingStructureModel> { };
+                    TSRingStructureModel ringModel = new TSRingStructureModel(itr);
+                    ringModel.RingId = $"TS_ring{itr.DoseLevel}";
+                    addedRings.Add(ringModel);
+                    ProvideUIUpdate(100 * ++percentCompletion / calcItems, $"Finished contouring ring: {itr}");
+                }
+                else ProvideUIUpdate(100 * ++percentCompletion / calcItems, $"Could NOT retrieve target: {itr.TargetId}! Skipping ring: TS_ring{itr.DoseLevel}");
+            }
+            ProvideUIUpdate($"Elapsed time: {ElapsedRunTime}");
+            return addedRings;
+        }
+
+        /// <summary>
+        /// Simple method to identify the index of the supplied TS manipulation item in the TS manipulation list, remove it, and update the list with
+        /// the same item except the structure id is swapped with the low resolution structure equivalent
+        /// </summary>
+        /// <param name="highResManipulationItem"></param>
+        /// <param name="lowResId"></param>
+        /// <returns></returns>
+        private void UpdateManipulationList(string originalId, string lowResId)
+        {
+            //get the index of the high resolution structure in the TS Manipulation list and repace this entry with the newly created low resolution structure
+            foreach(StructureOperationModel itr in _structureOperations.Where(x => x.StructureIdList.Contains(originalId)))
+            {
+                itr.UpdateStructureIds(lowResId);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to evaluate the structure manipulation list for empty or high resolution structures. If any 
+        /// high resolution structures are identified, convert them to low resolution
+        /// </summary>
+        /// <returns></returns>
+        protected bool CheckHighResolution()
+        {
+            UpdateUILabel("High-Res Structures: ");
+            ProvideUIUpdate("Checking for high resolution structures in structure set: ");
+            List<StructureOperationModel> highResManipulationList = new List<StructureOperationModel> { };
+            foreach (StructureOperationModel itr in _structureOperations)
+            {
+                //do any of the structures currently exist in the structure set?
+                if (StructureTuningHelper.DoesStructureExistInSS(itr.StructureIdList, true))
+                {
+                    if(StructureTuningHelper.GetStructuresFromIdList(itr.StructureIdList,true).Any(x => x.IsHighResolution))
+                    {
+                        highResManipulationList.Add(itr);
+                    }
+                }
+            }
+            //if there are high resolution structures, they will need to be converted to default resolution.
+            if (highResManipulationList.Any())
+            {
+                ProvideUIUpdate("High-resolution structures:");
+                IEnumerable<string> highResStructureIds = StructureTuningHelper.GetStructuresFromIdList(highResManipulationList.SelectMany(x => x.StructureIdList).Distinct(), true).Where(x => x.IsHighResolution).Select(x => x.Id);
+                foreach (string itr in highResStructureIds)
+                {
+                    ProvideUIUpdate($"{itr}");
+                }
+                ProvideUIUpdate("Now converting to low-resolution!");
+                //convert high res structures queued for TS manipulation to low resolution and update the queue with the resulting low res structure
+                if (ConvertHighToLowRes(highResStructureIds)) return true;
+                ProvideUIUpdate(100, "Finishing converting high resolution structures to default resolution");
+            }
+            else ProvideUIUpdate("No high resolution structures in the structure set!");
+            ProvideUIUpdate($"Elapsed time: {ElapsedRunTime}");
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to create an empty low resolution structure with id of <highResStructure.Id>_lowRes
+        /// </summary>
+        /// <param name="highResStructure"></param>
+        /// <returns></returns>
+        protected (bool, Structure) CreateLowResStructure(Structure highResStructure)
+        {
+            Structure lowRes = null;
+            bool fail = false;
+            string newName = highResStructure.Id + "_lowRes";
+            if (newName.Length > 16) newName = newName.Substring(0, 16);
+            //add a new structure (default resolution by default)
+            if (EclipseContext.GetInstance().StructureSet.CanAddStructure("CONTROL", newName)) lowRes = EclipseContext.GetInstance().StructureSet.AddStructure("CONTROL", newName);
+            else
+            {
+                ProvideUIUpdate($"Error! Cannot add new structure: {newName}!\nCorrect this issue and try again!", true);
+                fail = true;
+            }
+            return (fail, lowRes);
+        }
+
+        /// <summary>
+        /// Utility method to convert the structures in the supplied manipulation list from high resolution to low resolution
+        /// </summary>
+        /// <param name="highResManipulationList"></param>
+        /// <returns></returns>
+        private bool ConvertHighToLowRes(IEnumerable<string> highResStructureIdList)
+        {
+            int percentComplete = 0;
+            int calcItems = highResStructureIdList.Count() * 5;
+            foreach (string itr in highResStructureIdList)
+            {
+                ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Retrieving high resolution structure: {itr}");
+                //this structure should be present and contoured in structure set (checked previously)
+                Structure highResStruct = StructureTuningHelper.GetStructureFromId(itr);
+                ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Converting: {itr} to low resolution");
+
+                //get the high res structure mesh geometry
+                MeshGeometry3D mesh = highResStruct.MeshGeometry;
+                //get the start and stop image planes for this structure
+                int startSlice = CalculationHelper.ComputeSlice(mesh.Positions.Min(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+                int stopSlice = CalculationHelper.ComputeSlice(mesh.Positions.Max(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
+                ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Number of slices to contour: {stopSlice - startSlice + 1}");
+
+                //create an Id for the low resolution struture that will be created. The name will be '_lowRes' appended to the current structure Id
+                (bool fail, Structure lowRes) = CreateLowResStructure(highResStruct);
+                if (fail) return true;
+                ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Added low-res structure: {lowRes.Id}");
+                ProvideUIUpdate($"Contouring {lowRes.Id} now");
+
+                ContourLowResStructure(highResStruct, lowRes, startSlice, stopSlice);
+
+                ProvideUIUpdate(100 * ++percentComplete / calcItems, String.Format("Removing existing high-res structure from manipulation list and replacing with low-res"));
+                UpdateManipulationList(itr, lowRes.Id);
+                _highResStructureConversions.Add(itr, lowRes.Id);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to contour the supplied low resolution structure using the contour points from the supplied 
+        /// high resolution structure in the range of startSlice - stopSlice
+        /// </summary>
+        /// <param name="highResStructure"></param>
+        /// <param name="lowRes"></param>
+        /// <param name="startSlice"></param>
+        /// <param name="stopSlice"></param>
+        /// <returns></returns>
+        protected bool ContourLowResStructure(Structure highResStructure, Structure lowRes, int startSlice, int stopSlice)
+        {
+            int percentComplete = 0;
+            int calcItems = stopSlice - startSlice + 1;
+            //foreach slice that contains contours, get the contours, and determine if you need to add or subtract the contours on the given image plane for the new low resolution structure. You need to subtract contours if the points lie INSIDE the current structure contour.
+            //We can sample three points (first, middle, and last points in array) to see if they are inside the current contour. If any of them are, subtract the set of contours from the image plane. Otherwise, add the contours to the image plane. NOTE: THIS LOGIC ASSUMES
+            //THAT YOU DO NOT OBTAIN THE CUTOUT CONTOUR POINTS BEFORE THE OUTER CONTOUR POINTS (it seems that ESAPI generally passes the main structure contours first before the cutout contours, but more testing is needed)
+            for (int slice = startSlice; slice <= stopSlice; slice++)
+            {
+                ProvideUIUpdate(100 * ++percentComplete / calcItems);
+                VVector[][] points = highResStructure.GetContoursOnImagePlane(slice);
+                for (int i = 0; i < points.GetLength(0); i++)
+                {
+                    if (lowRes.IsPointInsideSegment(points[i][0]) ||
+                        lowRes.IsPointInsideSegment(points[i][points[i].GetLength(0) - 1]) ||
+                        lowRes.IsPointInsideSegment(points[i][(int)(points[i].GetLength(0) / 2)]))
+                    {
+                        lowRes.SubtractContourOnImagePlane(points[i], slice);
+                    }
+                    else lowRes.AddContourOnImagePlane(points[i], slice);
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Simple utility method to check that the supplied list of structure ids can be added as structures to the structure set
+        /// </summary>
+        /// <param name="structuresToAdd"></param>
+        /// <returns></returns>
+        protected bool VerifyAddTSStructures(List<SpecialOptimizationStructureModel> structuresToAdd)
+        {
+            bool fail = false;
+            ProvideUIUpdate("Verifying requested TS structures can be added to the structure set!");
+            int counter = 0;
+            int calcItems = structuresToAdd.Count;
+            foreach (SpecialOptimizationStructureModel itr in structuresToAdd)
+            {
+                if (!EclipseContext.GetInstance().StructureSet.CanAddStructure(itr.DICOMType, itr.StructureId))
+                {
+                    ProvideUIUpdate($"Error! {itr.StructureId} can't be added the structure set!", true);
+                    fail = true;
+                }
+                ProvideUIUpdate(100 * ++counter / calcItems);
+            }
+            return fail;
+        }
+
+        /// <summary>
+        /// Simple utility method to remove the supplied list of structures from the structure set
+        /// </summary>
+        /// <param name="structuresToRemove"></param>
+        /// <returns></returns>
+        private bool RemoveStructures(IEnumerable<string> structuresToRemove)
+        {
+            int calcItems = structuresToRemove.Count();
+            int counter = 0;
+            foreach (string itr in structuresToRemove)
+            {
+                if(StructureTuningHelper.DoesStructureExistInSS(itr))
+                {
+                    Structure s = StructureTuningHelper.GetStructureFromId(itr);
+                    if (EclipseContext.GetInstance().StructureSet.CanRemoveStructure(s))
+                    {
+                        ProvideUIUpdate(100 * ++counter / calcItems, $"Removing: {itr}");
+                        EclipseContext.GetInstance().StructureSet.RemoveStructure(s);
+                    }
+                    else
+                    {
+                        ProvideUIUpdate($"Error! Could not remove structure: {itr}!", true);
+                        if (string.IsNullOrEmpty(s.DicomType)) ProvideUIUpdate($"{itr} DICOM type: None");
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Helper function to remove the tuning structures that will be generated in this run and any existing tuning structures. Once removed
+        /// re-add the tuning structures that will be generated in this run to the structure set
+        /// </summary>
+        /// <param name="structures"></param>
+        /// <param name="removeTSTargets"></param>
+        /// <returns></returns>
+        protected bool RemoveOldTSStructures(List<StructureOperationModel> structures, bool removeTSTargets = false)
+        {
+            UpdateUILabel("Remove Prior Tuning Structures: ");
+            ProvideUIUpdate(0, "Removing prior tuning structures");
+
+            //Get the list of requested ts structures to remove (also add targets if requested)
+            IEnumerable<string> structuresToRemove;
+            if (!removeTSTargets) structuresToRemove = structures.Where(x => !x.OutputStructure.ToLower().Contains("ctv") && !x.OutputStructure.ToLower().Contains("ptv")).Select(x => x.OutputStructure);
+            else structuresToRemove = structures.Select(x => x.OutputStructure);
+
+            //From the above list, get the list of structures that can actually be removed from the structure set
+            (bool fail, List<string> removeList) = VerifyRemoveTSStructures(structuresToRemove);
+            if (fail) return true;
+
+            ProvideUIUpdate(0, "Adding any remaining tuning structures to the stack");
+            //now grab all existing structures in structure set where id starts with 'TS_'
+            IEnumerable<string> tsStructs = EclipseContext.GetInstance().StructureSet.Structures.Where(x => x.Id.Length > 2 && string.Equals(x.Id.ToLower().Substring(0, 3), "ts_")).Select(x => x.Id);
+            //Add the difference between tsStructures and removeList to removeList (i.e., existing ts structures that need to be removed that weren't contained
+            //in the requested ts generation structures for this run
+            removeList.AddRange(tsStructs.Except(removeList));
+            //remove the structures
+            if (RemoveStructures(removeList)) return true;
+
+            ProvideUIUpdate(100, "Prior tuning structures successfully removed!");
+            ProvideUIUpdate($"Elapsed time: {ElapsedRunTime}");
+            return false;
+        }
+
+        /// <summary>
+        /// Helper method to check the supplied list of structures to see if they can be removed from the structure set. Build a list of structures that
+        /// can be removed from the structure set
+        /// </summary>
+        /// <param name="structuresToRemove"></param>
+        /// <returns></returns>
+        private (bool, List<string>) VerifyRemoveTSStructures(IEnumerable<string> structuresToRemove)
+        {
+            List<string> removeList = new List<string> { };
+            bool fail = false;
+            int calcItems = structuresToRemove.Count();
+            int counter = 0;
+            foreach (string itr in structuresToRemove)
+            {
+                if(StructureTuningHelper.DoesStructureExistInSS(itr))
+                {
+                    Structure tmp = StructureTuningHelper.GetStructureFromId(itr);
+                    //structure is present in selected structure set
+                    if (tmp != null)
+                    {
+                        //check to see if the dicom type is "none"
+                        if (!string.IsNullOrEmpty(tmp.DicomType))
+                        {
+                            if (EclipseContext.GetInstance().StructureSet.CanRemoveStructure(tmp))
+                            {
+                                ProvideUIUpdate(100 * ++counter / calcItems, $"Adding: {itr} to the structure removal list");
+                                removeList.Add(itr);
+                            }
+                            else
+                            {
+                                ProvideUIUpdate(0, $"Error! {itr} can't be removed from the structure set!", true);
+                                fail = true;
+                            }
+                        }
+                        else
+                        {
+                            ProvideUIUpdate(0, $"{itr} is of DICOM type 'None'! ESAPI can't operate on DICOM type 'None'", true);
+                            fail = true;
+                        }
+                    }
+                }
+            }
+            return (fail, removeList);
+        }
+
+        /// <summary>
+        /// Helper method to check if a structure exists, remove it if it does, and generate a new structure with the specified Id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        protected (bool, Structure) RemoveAndGenerateStructure(string id)
+        {
+            bool fail = false;
+            Structure theStructure = null;
+            if (StructureTuningHelper.DoesStructureExistInSS(id))
+            {
+                if (EclipseContext.GetInstance().StructureSet.CanRemoveStructure(StructureTuningHelper.GetStructureFromId(id)))
+                {
+                    EclipseContext.GetInstance().StructureSet.RemoveStructure(StructureTuningHelper.GetStructureFromId(id));
+                }
+                else
+                {
+                    ProvideUIUpdate("Error! Could not add dummy box to structure set to cut target at matchplane! Exiting!", true);
+                    fail = true;
+                }
+            }
+            if (!VerifyAddTSStructures(new List<SpecialOptimizationStructureModel> { new SpecialOptimizationStructureModel("CONTROL", id) }))
+            {
+                theStructure = AddTSStructures(new SpecialOptimizationStructureModel("CONTROL", id));
+            }
+            else fail = true;
+            return (fail, theStructure);
+        }
+
+        /// <summary>
+        /// Helper method to create a Structure using the supplied dicom type and structure id
+        /// </summary>
+        /// <param name="itr1"></param>
+        /// <returns></returns>
+        protected Structure AddTSStructures(SpecialOptimizationStructureModel itr1)
+        {
+            Structure addedStructure = null;
+            string dicomType = itr1.DICOMType;
+            string structName = itr1.StructureId;
+            if (EclipseContext.GetInstance().StructureSet.CanAddStructure(dicomType, structName))
+            {
+                addedStructure = EclipseContext.GetInstance().StructureSet.AddStructure(dicomType, structName);
+                AddedStructureIds.Add(structName);
+            }
+            else ProvideUIUpdate($"Can't add {structName} to the structure set!");
+            return addedStructure;
+        }
+
+        /// <summary>
+        /// Simple helper method to check if the user origin has been assigned and exists inside the patient body
+        /// </summary>
+        /// <returns></returns>
+        protected bool IsUserOriginInsideBody()
+        {
+            if (!EclipseContext.GetInstance().StructureSet.Image.HasUserOrigin ||
+                !StructureTuningHelper.DoesStructureExistInSS("Body", true) ||
+                !StructureTuningHelper.GetStructureFromId("Body").IsPointInsideSegment(EclipseContext.GetInstance().StructureSet.Image.UserOrigin))
+            {
+                ProvideUIUpdate("Did you forget to set the user origin? \nUser origin is NOT inside body contour! \nPlease fix and try again!", true);
+                return true;
+            }
+            return false;
+        }
+        #endregion
+    }
+}

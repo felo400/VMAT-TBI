@@ -1,0 +1,104 @@
+﻿<Window x:Class="AutoPlannerHelpers.Views.ModifyMarginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AutoPlannerHelpers.Views"
+        xmlns:enum="clr-namespace:AutoPlannerHelpers.Enums"
+        xmlns:Behaviors="clr-namespace:Microsoft.Xaml.Behaviors;assembly=Microsoft.Xaml.Behaviors"
+        mc:Ignorable="d"
+        WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+    <Grid>
+        <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
+            <StackPanel HorizontalAlignment="Center" Margin="0">
+                <Label Content="Adjust structure operation margin" FontSize="20" FontStyle="Normal" FontWeight="SemiBold" HorizontalContentAlignment="Center" Margin="5"></Label>
+                <Grid HorizontalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Structure:" Grid.Column="0" HorizontalAlignment="Right"/>
+                    <Label Content="{Binding StructureId, FallbackValue=None}" Grid.Column="1" Background="DarkGray" HorizontalContentAlignment="Center" MinWidth="120"/>
+                </Grid>
+                <Grid DataContext="{Binding StructureMargin}" IsSharedSizeScope="True" Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col0"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col1"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col2"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col3"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col4"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col5"/>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="col6"/>
+                        <ColumnDefinition Width="*"   SharedSizeGroup="col7"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- Simple header cell style (optional) -->
+                    <Grid.Resources>
+                        <Style x:Key="HeaderBorderStyle" TargetType="Border">
+                            <Setter Property="Padding" Value="1"/>
+                        </Style>
+                        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontSize" Value="14"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                        </Style>
+                    </Grid.Resources>
+
+                    <!-- Column 0: Structure A -->
+                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Margin Type"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Geometry Type"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="x1 (cm)"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="3" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="y1 (cm)"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="4" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="z1 (cm)"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="5" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="x2 (cm)"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="6" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="y2 (cm)"/>
+                    </Border>
+
+                    <Border Grid.Row="0" Grid.Column="7" Style="{StaticResource HeaderBorderStyle}">
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="z2 (cm)"/>
+                    </Border>
+
+                    <ComboBox Grid.Row="1" Grid.Column="0" HorizontalContentAlignment="Center" SelectedItem="{Binding MarginType}" ItemsSource="{Binding Source={local:EnumBindingSource {x:Type enum:StructureMarginType}}}" MinWidth="120" Margin="2">
+                        <Behaviors:Interaction.Triggers>
+                            <Behaviors:EventTrigger EventName="SelectionChanged">
+                                <Behaviors:InvokeCommandAction Command="{Binding Path=DataContext.MarginTypeChangedCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding MarginType}"/>
+                            </Behaviors:EventTrigger>
+                        </Behaviors:Interaction.Triggers>
+                    </ComboBox>
+                    <ComboBox Grid.Row="1" Grid.Column="1" HorizontalContentAlignment="Center" SelectedItem="{Binding GeometryType}" ItemsSource="{Binding Source={local:EnumBindingSource {x:Type enum:MarginGeometryType}}}" MinWidth="120" Margin="2"/>
+                    <TextBox Grid.Row="1" Grid.Column="2" HorizontalContentAlignment="Center" Text="{Binding x1}" MinWidth="70" Margin="2"/>
+                    <TextBox Grid.Row="1" Grid.Column="3" HorizontalContentAlignment="Center" Text="{Binding y1}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <TextBox Grid.Row="1" Grid.Column="4" HorizontalContentAlignment="Center" Text="{Binding z1}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <TextBox Grid.Row="1" Grid.Column="5" HorizontalContentAlignment="Center" Text="{Binding x2}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <TextBox Grid.Row="1" Grid.Column="6" HorizontalContentAlignment="Center" Text="{Binding y2}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <TextBox Grid.Row="1" Grid.Column="7" HorizontalContentAlignment="Center" Text="{Binding z2}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <Button Grid.Row="2" Grid.ColumnSpan="8" Content="Set Margin" FontWeight="Bold" MinWidth="120" HorizontalAlignment="Center" Margin="5" Command="{Binding Path=DataContext.SetMarginCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                </Grid>
+            </StackPanel>
+        </Border> 
+    </Grid>
+</Window>

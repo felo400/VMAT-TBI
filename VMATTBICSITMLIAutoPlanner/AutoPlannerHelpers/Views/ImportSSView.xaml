@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="AutoPlannerHelpers.Views.ImportSSView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:AutoPlannerHelpers.Views"
+             mc:Ignorable="d">
+    <Grid>
+        <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
+            <Grid HorizontalAlignment="Stretch" MinWidth="500" MaxHeight="370" >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Label Content="Import Auto-countours" Grid.Row="0" Grid.Column="0" FontSize="20" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="5"/>
+                <Button Content="?" Grid.Row="0" Grid.Column="1" MinWidth="20" MinHeight="20" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding ShowImportSSInfoCommand}"></Button>
+                <Button Content="Import Structure Set" FontWeight="Bold" Grid.Row="1" Grid.ColumnSpan="2" Width="170" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="5" Command="{Binding ImportSSCommand}"></Button>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
