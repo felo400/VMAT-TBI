@@ -33,7 +33,25 @@ namespace AutoPlannerHelpers.Helpers
         /// <param name="a"></param>
         public void RunOnNewThread(Action a)
         {
-            Thread t = new Thread(() => a());
+            Thread t = new Thread(() =>
+            {
+                //an unhandled exception on this (progress window) thread would terminate the host process (Eclipse when running
+                //as a plugin): catch it, report it, and keep the application alive
+                Dispatcher.CurrentDispatcher.UnhandledException += (s, e) =>
+                {
+                    e.Handled = true;
+                    isError = true;
+                    try { System.Windows.MessageBox.Show($"Error: {e.Exception.GetBaseException().Message}\n\n{e.Exception.GetBaseException().StackTrace}", "VMAT AutoPlanner"); } catch { }
+                };
+                try { a(); }
+                catch (Exception e)
+                {
+                    isError = true;
+                    try { System.Windows.MessageBox.Show($"Error: {e.GetBaseException().Message}\n\n{e.GetBaseException().StackTrace}", "VMAT AutoPlanner"); } catch { }
+                }
+            });
+            t.CurrentCulture = Thread.CurrentThread.CurrentCulture;
+            t.CurrentUICulture = Thread.CurrentThread.CurrentUICulture;
             t.SetApartmentState(ApartmentState.STA);
             t.IsBackground = true;
             t.Start();

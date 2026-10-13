@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Threading;
 using VMS.TPS.Common.Model.API;
 using Application = System.Windows.Application;
 
@@ -41,6 +42,17 @@ namespace VMS.TPS
                                                                   context.ExternalPlanSetup,
                                                                   context.Course,
                                                                   context.CurrentUser);
+            //Protect Eclipse: any exception raised on Eclipse's UI thread by our code (or by work we queued on it) is caught and
+            //shown instead of terminating Eclipse ("Application has terminated unexpectedly"), so the user can still SAVE the plan.
+            Dispatcher eclipseDispatcher = Dispatcher.CurrentDispatcher;
+            DispatcherUnhandledExceptionEventHandler guard = (s, e) =>
+            {
+                e.Handled = true;
+                Exception ex = e.Exception is System.Reflection.TargetInvocationException && e.Exception.InnerException != null ? e.Exception.InnerException : e.Exception;
+                Script.LogResolve("UNHANDLED (Eclipse thread)", ex.ToString());
+                MessageBox.Show($"Error interno del AutoPlanner (Eclipse NO se cerrará):\n{ex.GetType().Name}: {ex.Message}\n\nRevise y GUARDE su trabajo en Eclipse.\n\n{ex.StackTrace}", "VMAT AutoPlanner");
+            };
+            eclipseDispatcher.UnhandledException += guard;
             try
             {
                 switch (choice)
@@ -50,12 +62,25 @@ namespace VMS.TPS
                     case Choice.TMLI: TMLIAutoPlanner.PluginEntry.Run(); break;
                     case Choice.OptLoop: AutoPlannerOptimizationLoop.PluginEntry.Run(); break;
                 }
+                //let any work still queued on Eclipse's thread finish WHILE the context is still valid and the guard is active
+                FlushDispatcher(eclipseDispatcher);
             }
             finally
             {
+                FlushDispatcher(eclipseDispatcher);
                 WeakReferenceMessenger.Default.Reset();
                 EclipseContext.ResetInstance();
+                eclipseDispatcher.UnhandledException -= guard;
             }
+        }
+
+        private static void FlushDispatcher(Dispatcher d)
+        {
+            try
+            {
+                for (int i = 0; i < 3; i++) d.Invoke(DispatcherPriority.ApplicationIdle, new Action(() => { }));
+            }
+            catch (Exception e) { Script.LogResolve("FlushDispatcher", e.Message); }
         }
 
         /// <summary>

@@ -30,6 +30,11 @@ namespace AutoPlannerOptimizationLoop
             Exception uiError = null;
             Thread t = new Thread(() =>
             {
+                Dispatcher.CurrentDispatcher.UnhandledException += (s, e) =>
+                {
+                    e.Handled = true;
+                    try { System.Windows.MessageBox.Show($"Error: {e.Exception.GetBaseException().Message}\n\n{e.Exception.GetBaseException().StackTrace}", "VMAT AutoPlanner"); } catch { }
+                };
                 try
                 {
                     OptimizationLoopMainView mv = new OptimizationLoopMainView { DataContext = new OptimizationLoopMainViewModel(new string[] { }) };
