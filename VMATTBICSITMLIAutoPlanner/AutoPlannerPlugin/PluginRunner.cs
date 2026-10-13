@@ -69,6 +69,7 @@ namespace VMS.TPS
                               "System.Buffers", "System.Numerics.Vectors", "System.Threading.Tasks.Extensions", "System.ValueTuple",
                               "Microsoft.Bcl.AsyncInterfaces" };
             List<string> missing = new List<string>();
+            string lastError = "";
             foreach (string dep in deps)
             {
                 if (AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, dep, StringComparison.OrdinalIgnoreCase))) continue;
@@ -78,7 +79,8 @@ namespace VMS.TPS
                     string f = Path.Combine(dir, dep + ".dll");
                     if (File.Exists(f))
                     {
-                        try { Assembly.LoadFrom(f); loaded = true; break; } catch { }
+                        try { Script.LoadAssemblySafe(f); loaded = true; break; }
+                        catch (Exception e) { Script.LogResolve(f, "preload failed: " + e.Message); lastError = e.Message; }
                     }
                 }
                 if (!loaded && (dep == "Microsoft.Xaml.Behaviors" || dep == "CommunityToolkit.Mvvm" || dep == "AutoPlannerHelpers")) missing.Add(dep);
@@ -87,6 +89,7 @@ namespace VMS.TPS
             {
                 MessageBox.Show("No se encontraron estas DLL junto al plugin: " + string.Join(", ", missing) +
                                 "\nCarpetas buscadas:\n" + string.Join("\n", Script.GetSearchDirectories(pluginDir)) +
+                                "\n\nDetalle: " + lastError +
                                 "\n\nCopie TODA la carpeta VMAT-TBI-CSI-TMLI (no solo el .dll).", "VMAT AutoPlanner");
             }
         }

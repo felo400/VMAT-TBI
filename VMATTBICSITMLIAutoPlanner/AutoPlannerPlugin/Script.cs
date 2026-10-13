@@ -47,7 +47,7 @@ namespace VMS.TPS
                             string candidate = Path.Combine(dir, name + ext);
                             if (File.Exists(candidate))
                             {
-                                Assembly loaded = Assembly.LoadFrom(candidate);
+                                Assembly loaded = LoadAssemblySafe(candidate);
                                 LogResolve(args.Name, "loaded from " + candidate);
                                 return loaded;
                             }
@@ -115,9 +115,30 @@ namespace VMS.TPS
             AppDomain.CurrentDomain.AssemblyResolve += handler;
         }
 
+
+        /// <summary>
+        /// Load an assembly from disk. Plain LoadFrom fails for files on a NETWORK drive or files extracted from a zip
+        /// downloaded from the internet ("blocked" files): .NET treats them as remote/sandboxed. UnsafeLoadFrom skips that
+        /// check; loading the bytes is the last fallback.
+        /// </summary>
+        internal static Assembly LoadAssemblySafe(string path)
+        {
+            try { return Assembly.UnsafeLoadFrom(path); }
+            catch (Exception e1)
+            {
+                LogResolve(path, "UnsafeLoadFrom failed: " + e1.Message);
+                try { return Assembly.LoadFrom(path); }
+                catch (Exception e2)
+                {
+                    LogResolve(path, "LoadFrom failed: " + e2.Message);
+                    return Assembly.Load(File.ReadAllBytes(path));
+                }
+            }
+        }
+
         internal static string ResolveLogPath => Path.Combine(Path.GetTempPath(), "VMATAutoPlanner_resolve.log");
 
-        private static void LogResolve(string request, string result)
+        internal static void LogResolve(string request, string result)
         {
             try { File.AppendAllText(ResolveLogPath, $"{DateTime.Now:s}  {request}  ->  {result}{Environment.NewLine}"); } catch { }
         }
