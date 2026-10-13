@@ -6,6 +6,9 @@ on:
   push:
     branches: [ main, master, eclipse-16.1 ]
 
+permissions:
+  contents: write   # para publicar el zip compilado como "Release" descargable
+
 jobs:
   build:
     runs-on: windows-latest
@@ -47,7 +50,7 @@ jobs:
 
       - name: Compilar (Release x64, ESAPI 16.1)
         working-directory: VMATTBICSITMLIAutoPlanner
-        run: msbuild "VMATTBICSITMLIAutoPlanner.ci.slnf" /p:Configuration=Release /p:Platform="x64" /p:ESAPIVersion=16.1 /m
+        run: msbuild "VMATTBICSITMLIAutoPlanner.ci.slnf" /p:Configuration=Release /p:Platform="x64" /p:ESAPIVersion=16.1 /m "/flp:logfile=${{ github.workspace }}\\build.log;verbosity=normal" "/flp1:logfile=${{ github.workspace }}\\build_warnings.log;warningsonly"
 
       - name: Verificar resultado
         shell: pwsh
@@ -68,3 +71,13 @@ jobs:
         with:
           name: VMAT-AutoPlanner-Eclipse16.1-bin
           path: bin/
+
+      - name: Empaquetar y publicar Release descargable
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "eclipse-16.1-build-${{ github.run_number }}"
+          $zip = Join-Path $env:RUNNER_TEMP "VMAT-AutoPlanner-Eclipse16.1-bin.zip"
+          Compress-Archive -Path "bin" -DestinationPath $zip -Force
+          gh release create $tag $zip "build.log" "build_warnings.log" --target "${{ github.sha }}" --title "Compilado Eclipse 16.1 (build ${{ github.run_number }})" --notes "Carpeta bin compilada para Eclipse/ESAPI 16.1. Descomprimir, copiar la carpeta bin a la ruta de red y seleccionarla en Eclipse (Tools > Scripts > Change Folder). Ver bin/LEEME_INSTALACION.md." --prerelease
