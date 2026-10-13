@@ -111,9 +111,51 @@ namespace AutoPlannerHelpers.BaseCore
                 ProvideUIUpdate(0, "Course creation or assignment failed! Exiting!", true);
                 return true;
             }
+            //ESAPI can't delete plans. If the course already contains plans with the Ids this run needs (e.g. from a previous run),
+            //offer to create a NEW course instead of stopping
+            List<string> conflicts = theCourse.ExternalPlanSetups.Select(x => x.Id)
+                                              .Where(id => prescriptions.Any(p => string.Equals(p.PlanId, id)) || id.ToLower().Contains("legs"))
+                                              .ToList();
+            if (conflicts.Any())
+            {
+                string newId = GetUniqueCourseId(courseId);
+                ConfirmPrompt CP = new ConfirmPrompt($"El curso '{courseId}' ya tiene plan(es): {string.Join(", ", conflicts)}.\n" +
+                                                     "ESAPI no puede borrar planes.\n\n" +
+                                                     $"¿Crear un curso NUEVO '{newId}' para este plan?\n" +
+                                                     "(Cancelar = detener; puede borrar los planes manualmente en Eclipse y volver a intentar)",
+                                                     "Crear curso nuevo", "Cancelar");
+                CP.ShowDialog();
+                if (CP.GetSelection())
+                {
+                    courseId = newId;
+                    ProvideUIUpdate($"Creating new course {courseId}");
+                    theCourse = CreateCourse();
+                    if (theCourse == null)
+                    {
+                        ProvideUIUpdate(0, "Course creation failed! Exiting!", true);
+                        return true;
+                    }
+                }
+            }
             ProvideUIUpdate(100, $"Course {courseId} retrieved!");
             ProvideUIUpdate($"Elapsed time: {ElapsedRunTime}");
             return false;
+        }
+
+        /// <summary>
+        /// Return a course Id that does not exist yet for the patient: 'VMAT TBI' -> 'VMAT TBI_2', 'VMAT TBI_3', ...
+        /// (Eclipse course Ids are limited to 16 characters)
+        /// </summary>
+        private string GetUniqueCourseId(string baseId)
+        {
+            for (int i = 2; i < 100; i++)
+            {
+                string suffix = $"_{i}";
+                string root = baseId.Length + suffix.Length > 16 ? baseId.Substring(0, 16 - suffix.Length) : baseId;
+                string candidate = root + suffix;
+                if (!EclipseContext.GetInstance().Patient.Courses.Any(x => string.Equals(x.Id, candidate))) return candidate;
+            }
+            return baseId + "_new";
         }
 
         /// <summary>
