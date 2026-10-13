@@ -92,8 +92,10 @@ namespace AutoPlannerHelpers.BaseCore
             {
                 //copy the plan, set the plan id based on the counter, and make a empty list to hold the beams that need to be removed
                 ExternalPlanSetup newplan = (ExternalPlanSetup)plan.Course.CopyPlanSetup(plan);
-                if (isAPPA) newplan.Id = $"{count + 1} {(names.ElementAt(count).IsocenterId.Contains("upper") ? "Upper Legs" : "Lower Legs")}";
-                else newplan.Id = $"{count + 1} {names.ElementAt(count).IsocenterId}";
+                string desiredId = isAPPA ? $"{count + 1} {(names.ElementAt(count).IsocenterId.Contains("upper") ? "Upper Legs" : "Lower Legs")}"
+                                          : $"{count + 1} {names.ElementAt(count).IsocenterId}";
+                //plans with this Id may already exist (e.g. a previous separation): ESAPI can't delete them, so use a free Id
+                newplan.Id = GetUniquePlanId(plan.Course, newplan, desiredId);
                 ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Created new plan {newplan.Id} as copy of {plan.Id}");
                 List<Beam> beamsToRemove = new List<Beam> { };
                 //can't add reference point to plan because it must be open in Eclipse for ESAPI to perform this function. Need to fix in v16
@@ -122,6 +124,27 @@ namespace AutoPlannerHelpers.BaseCore
                 count++;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Return 'desired' if no other plan in the course uses it, otherwise 'desired_2', 'desired_3'... (Eclipse plan Ids: max 13 characters)
+        /// </summary>
+        protected string GetUniquePlanId(Course course, ExternalPlanSetup self, string desired)
+        {
+            if (desired.Length > 13) desired = desired.Substring(0, 13);
+            bool InUse(string id) => course.PlanSetups.Any(p => !ReferenceEquals(p, self) && string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+            if (!InUse(desired)) return desired;
+            for (int i = 2; i < 100; i++)
+            {
+                string suffix = $"_{i}";
+                string root = desired.Length + suffix.Length > 13 ? desired.Substring(0, 13 - suffix.Length) : desired;
+                if (!InUse(root + suffix))
+                {
+                    ProvideUIUpdate($"Plan Id '{desired}' already exists in course {course.Id} -> using '{root + suffix}'");
+                    return root + suffix;
+                }
+            }
+            return self.Id;
         }
 
         /// <summary>
