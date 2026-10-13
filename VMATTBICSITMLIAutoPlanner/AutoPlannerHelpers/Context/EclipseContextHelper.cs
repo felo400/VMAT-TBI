@@ -23,50 +23,87 @@ namespace AutoPlannerHelpers.Context
         /// <returns></returns>
         public static bool GenerateEclipseContext(List<string> args) 
         {
+            //each step is executed separately so that (1) a failure in a non-essential step (CT list, registrations, plan, course)
+            //does not prevent the script from opening and (2) the user/physicist sees exactly WHICH step failed and why
+            string step = "decode arguments";
             try
             {
                 DecodeStringContext(args);
+                step = "Application.CreateApplication()";
                 EclipseContext.GetInstance().Application = Application.CreateApplication();
-                EclipseContext.GetInstance().UserName = EclipseContext.GetInstance().Application.CurrentUser.Name;
-                EclipseContext.GetInstance().UserId = EclipseContext.GetInstance().Application.CurrentUser.Id;
-                if (!string.IsNullOrEmpty(PatientId))
+                step = "read current user";
+                EclipseContext.GetInstance().UserName = EclipseContext.GetInstance().Application.CurrentUser?.Name ?? "";
+                EclipseContext.GetInstance().UserId = EclipseContext.GetInstance().Application.CurrentUser?.Id ?? "";
+                if (string.IsNullOrEmpty(PatientId))
                 {
-                    EclipseContext.GetInstance().Patient = EclipseContext.GetInstance().Application.OpenPatientById(PatientId);
-                    if (!ReferenceEquals(EclipseContext.GetInstance().Patient, null))
-                    {
-                        Logger.GetInstance().MRN = EclipseContext.GetInstance().Patient.Id;
-                        EclipseContext.GetInstance().Registrations = EclipseContext.GetInstance().Patient.Registrations;
-                        EclipseContext.GetInstance().CTImages = EclipseContext.GetInstance().Patient.Studies.SelectMany(x => x.Series).Where(x => x.Modality == VMS.TPS.Common.Model.Types.SeriesModality.CT).SelectMany(x => x.Images).Where(x => !double.IsNaN(x.Origin.x));
-                        if (!EclipseContext.GetInstance().CTImages.Any())
-                        {
-                            Logger.GetInstance().LogError($"Patient (${EclipseContext.GetInstance().Patient.Id}) has NO CT images!");
-                        }
-                        if (!string.IsNullOrEmpty(StructureSetUID))
-                        {
-                            EclipseContext.GetInstance().StructureSet = EclipseContext.GetInstance().Patient.StructureSets.FirstOrDefault(x => string.Equals(StructureSetUID, x.UID));
-                            if (!ReferenceEquals(EclipseContext.GetInstance().StructureSet, null)) Logger.GetInstance().StructureSet = StructureSetUID;
-                        }
-                        EclipseContext.GetInstance().ImageFOR = ImageFOR;
-                        if (!string.IsNullOrEmpty(PlanUID))
-                        {
-                            EclipseContext.GetInstance().VMATPlans = new List<ExternalPlanSetup> { EclipseContext.GetInstance().Patient.Courses.SelectMany(x => x.ExternalPlanSetups).FirstOrDefault(x => string.Equals(PlanUID, x.UID)) };
-                            if (EclipseContext.GetInstance().VMATPlans.Any()) Logger.GetInstance().PlanUIDs = new List<string> { EclipseContext.GetInstance().VMATPlans.First().UID };
-                        }
-                        if (!string.IsNullOrEmpty(CourseID))
-                        {
-                            EclipseContext.GetInstance().Course = EclipseContext.GetInstance().Patient.Courses.FirstOrDefault(x => string.Equals(CourseID, x.Id));
-                            //if (!ReferenceEquals(EclipseContext.Course, null)) Logger.GetInstance().CourseId = EclipseContext.Course.Id;
-                        }
-                    }
+                    Logger.GetInstance().LogError($"Error! No patient Id received from Eclipse. Arguments received: '{string.Join(" | ", args)}'");
+                    return true;
                 }
-                else return true;
-                return false;
+                step = $"open patient '{PatientId}'";
+                EclipseContext.GetInstance().Patient = EclipseContext.GetInstance().Application.OpenPatientById(PatientId);
+                if (ReferenceEquals(EclipseContext.GetInstance().Patient, null))
+                {
+                    Logger.GetInstance().LogError($"Error! Patient '{PatientId}' could not be opened (OpenPatientById returned null).");
+                    return true;
+                }
             }
             catch (Exception e)
             {
-                Logger.GetInstance().LogError($"Error! Unable to generate Eclipse Context instance because: {e.Message}");
-                Logger.GetInstance().LogError(e.StackTrace, true);
+                Logger.GetInstance().LogError($"Error! Unable to generate Eclipse Context instance.\nStep: {step}\nReason: {e.GetType().Name}: {e.Message}\n\n{e.StackTrace}");
                 return true;
+            }
+
+            Patient pat = EclipseContext.GetInstance().Patient;
+            Logger.GetInstance().MRN = pat.Id;
+            TryStep("read registrations", () => EclipseContext.GetInstance().Registrations = (pat.Registrations ?? Enumerable.Empty<Registration>()).ToList());
+            TryStep("read CT images", () =>
+            {
+                //materialize the list now (the original lazy query was evaluated later and could fail outside of this try/catch)
+                EclipseContext.GetInstance().CTImages = (pat.Studies ?? Enumerable.Empty<Study>())
+                                                        .Where(st => st != null && st.Series != null)
+                                                        .SelectMany(st => st.Series)
+                                                        .Where(se => se != null && se.Modality == VMS.TPS.Common.Model.Types.SeriesModality.CT && se.Images != null)
+                                                        .SelectMany(se => se.Images)
+                                                        .Where(im => im != null && im.Series != null && !double.IsNaN(im.Origin.x))
+                                                        .ToList();
+                if (!EclipseContext.GetInstance().CTImages.Any()) Logger.GetInstance().LogError($"Patient ({pat.Id}) has NO CT images!");
+            });
+            if (!string.IsNullOrEmpty(StructureSetUID))
+            {
+                TryStep("open structure set", () =>
+                {
+                    EclipseContext.GetInstance().StructureSet = (pat.StructureSets ?? Enumerable.Empty<StructureSet>()).FirstOrDefault(x => x != null && string.Equals(StructureSetUID, x.UID));
+                    if (!ReferenceEquals(EclipseContext.GetInstance().StructureSet, null)) Logger.GetInstance().StructureSet = StructureSetUID;
+                    else Logger.GetInstance().LogError($"Warning! Structure set with UID {StructureSetUID} not found for patient {pat.Id}");
+                });
+            }
+            EclipseContext.GetInstance().ImageFOR = ImageFOR ?? "";
+            if (!string.IsNullOrEmpty(PlanUID))
+            {
+                TryStep("open plan", () =>
+                {
+                    ExternalPlanSetup plan = (pat.Courses ?? Enumerable.Empty<Course>()).Where(c => c != null && c.ExternalPlanSetups != null).SelectMany(x => x.ExternalPlanSetups).FirstOrDefault(x => x != null && string.Equals(PlanUID, x.UID));
+                    //only add the plan if it was found (previously a null entry could be added to the list)
+                    EclipseContext.GetInstance().VMATPlans = plan != null ? new List<ExternalPlanSetup> { plan } : new List<ExternalPlanSetup> { };
+                    if (plan != null) Logger.GetInstance().PlanUIDs = new List<string> { plan.UID };
+                });
+            }
+            if (!string.IsNullOrEmpty(CourseID))
+            {
+                TryStep("open course", () => EclipseContext.GetInstance().Course = (pat.Courses ?? Enumerable.Empty<Course>()).FirstOrDefault(x => x != null && string.Equals(CourseID, x.Id)));
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Run a non-essential context step. A failure is reported (with the step name) but does not abort the script
+        /// </summary>
+        private static void TryStep(string step, Action a)
+        {
+            try { a(); }
+            catch (Exception e)
+            {
+                Logger.GetInstance().LogError($"Warning! Eclipse context step '{step}' failed: {e.GetType().Name}: {e.Message}\n\n{e.StackTrace}");
             }
         }
 
