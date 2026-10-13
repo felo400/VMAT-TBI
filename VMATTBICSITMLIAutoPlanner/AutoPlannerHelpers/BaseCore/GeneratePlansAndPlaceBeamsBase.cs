@@ -142,6 +142,50 @@ namespace AutoPlannerHelpers.BaseCore
             return false;
         }
 
+        //last machine parameters requested (reported to the user if Eclipse rejects them)
+        protected string requestedMachineInfo = "";
+
+        /// <summary>
+        /// Build the machine parameters for a beam. ESAPI needs the FFF beams split in energy + fluence mode
+        /// (e.g. '6FFF' or '6X-FFF' -> energy '6X', fluence 'FFF'); FFF beams also need their own dose rate.
+        /// </summary>
+        protected ExternalBeamMachineParameters CreateMachineParameters(string linac, string energy, int doseRate, string technique)
+        {
+            string e = (energy ?? "").Trim();
+            string fluence = null;
+            string upper = e.ToUpper();
+            if (upper.Contains("FFF"))
+            {
+                fluence = "FFF";
+                string number = new string(upper.TakeWhile(char.IsDigit).ToArray());
+                e = number + "X";
+                if (doseRate == 600) doseRate = number == "10" ? 2400 : 1400;
+            }
+            else if (upper.Contains("SRS"))
+            {
+                fluence = "SRS";
+                string number = new string(upper.TakeWhile(char.IsDigit).ToArray());
+                e = number + "X";
+            }
+            requestedMachineInfo += (requestedMachineInfo.Length > 0 ? "\n" : "") + $"Campos {technique}: acelerador (Machine ID): '{linac}', energía: '{e}'{(fluence != null ? $" + modo '{fluence}'" : "")}, tasa de dosis: {doseRate} UM/min, técnica: {technique}";
+            return new ExternalBeamMachineParameters(linac, e, doseRate, technique, fluence);
+        }
+
+        /// <summary>
+        /// Add a clear explanation to the most common beam creation error
+        /// </summary>
+        protected string ExplainBeamError(string message)
+        {
+            if (!string.IsNullOrEmpty(message) && message.ToLower().Contains("machine configuration"))
+            {
+                return message + "\n\nEclipse no encontró esta combinación en Beam Configuration:\n" + requestedMachineInfo +
+                       "\n\nRevise en el archivo configuration\\VMAT_xxx_config.ini que 'add linac{...}' sea EXACTAMENTE el Machine ID del equipo en Eclipse " +
+                       "y que la energía exista en ese equipo (por ejemplo 6X, 10X, 6FFF).\n" +
+                       "Si el error aparece al crear los campos AP/PA de piernas (TBI/TMLI): esos usan siempre 6X a 600 UM/min.";
+            }
+            return message;
+        }
+
         /// <summary>
         /// Return a course Id that does not exist yet for the patient: 'VMAT TBI' -> 'VMAT TBI_2', 'VMAT TBI_3', ...
         /// (Eclipse course Ids are limited to 16 characters)

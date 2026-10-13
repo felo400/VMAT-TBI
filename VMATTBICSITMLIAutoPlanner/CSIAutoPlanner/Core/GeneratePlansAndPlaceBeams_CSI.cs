@@ -48,7 +48,7 @@ namespace CSIAutoPlanner.Core
         {
             planIsocenters = new List<PlanIsocenterModel>(planInfo);
             prescriptions = new List<PrescriptionModel>(presc);
-            ebmpArc = new ExternalBeamMachineParameters(linac, energy, 600, "ARC", null);
+            ebmpArc = CreateMachineParameters(linac, energy, 600, "ARC");
             courseId = CSIAutoPlannerSettings.CourseId;
             calculationModel = CSIAutoPlannerSettings.DoseCalculationAlgorithm;
             optimizationModel = CSIAutoPlannerSettings.OptimizationAlorithm;
@@ -98,7 +98,7 @@ namespace CSIAutoPlanner.Core
             }
             catch (Exception e)
             {
-                ProvideUIUpdate($"{e.Message}", true);
+                ProvideUIUpdate(ExplainBeamError(e.Message), true);
                 StackTraceError = e.StackTrace;
                 return true;
             }

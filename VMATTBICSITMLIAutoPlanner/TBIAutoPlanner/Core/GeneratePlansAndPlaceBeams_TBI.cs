@@ -61,9 +61,9 @@ namespace TBIAutoPlanner.Core
             int numAPPAIsos = planIsocenters.SelectMany(x => x.Isocenters).Count(x => x.BeamType == AutoPlannerHelpers.Enums.BeamType.APPA);
             totalNumIsos = numVMATIsos + numAPPAIsos;
             courseId = TBIAutoPlannerSettings.CourseId;
-            ebmpArc = new ExternalBeamMachineParameters(linac, energy, 600, "ARC", null);
+            ebmpArc = CreateMachineParameters(linac, energy, 600, "ARC");
             //AP/PA beams always use 6X
-            ebmpStatic = new ExternalBeamMachineParameters(linac, "6X", 600, "STATIC", null);
+            ebmpStatic = CreateMachineParameters(linac, "6X", 600, "STATIC");
             //copy the calculation model
             calculationModel = TBIAutoPlannerSettings.DoseCalculationAlgorithm;
             optimizationModel = TBIAutoPlannerSettings.OptimizationAlorithm;
@@ -117,7 +117,7 @@ namespace TBIAutoPlanner.Core
             }
             catch (Exception e)
             {
-                ProvideUIUpdate($"{e.Message}", true);
+                ProvideUIUpdate(ExplainBeamError(e.Message), true);
                 StackTraceError = e.StackTrace;
                 return true;
             }
