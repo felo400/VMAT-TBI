@@ -1,8 +1,11 @@
-using AutoPlannerHelpers.Context;
+﻿using AutoPlannerHelpers.Context;
 using AutoPlannerHelpers.Logging;
 using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -23,6 +26,7 @@ namespace VMS.TPS
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Run(ScriptContext context, string pluginDir)
         {
+            PreloadDependencies(pluginDir);
             EnsureWpfApplicationAndStyles();
 
             Choice choice = AskWhatToRun(context);
@@ -51,6 +55,39 @@ namespace VMS.TPS
             {
                 WeakReferenceMessenger.Default.Reset();
                 EclipseContext.ResetInstance();
+            }
+        }
+
+        /// <summary>
+        /// WPF's XAML parser loads assemblies referenced from XAML (e.g. Microsoft.Xaml.Behaviors) by name, without
+        /// looking in the plugin folder. Loading them up-front from the plugin folder makes them available to the parser.
+        /// </summary>
+        private static void PreloadDependencies(string pluginDir)
+        {
+            string[] deps = { "Microsoft.Xaml.Behaviors", "CommunityToolkit.Mvvm", "AutoPlannerHelpers", "EvilDICOM",
+                              "System.ComponentModel.Annotations", "System.Runtime.CompilerServices.Unsafe", "System.Memory",
+                              "System.Buffers", "System.Numerics.Vectors", "System.Threading.Tasks.Extensions", "System.ValueTuple",
+                              "Microsoft.Bcl.AsyncInterfaces" };
+            List<string> missing = new List<string>();
+            foreach (string dep in deps)
+            {
+                if (AppDomain.CurrentDomain.GetAssemblies().Any(a => string.Equals(a.GetName().Name, dep, StringComparison.OrdinalIgnoreCase))) continue;
+                bool loaded = false;
+                foreach (string dir in Script.GetSearchDirectories(pluginDir))
+                {
+                    string f = Path.Combine(dir, dep + ".dll");
+                    if (File.Exists(f))
+                    {
+                        try { Assembly.LoadFrom(f); loaded = true; break; } catch { }
+                    }
+                }
+                if (!loaded && (dep == "Microsoft.Xaml.Behaviors" || dep == "CommunityToolkit.Mvvm" || dep == "AutoPlannerHelpers")) missing.Add(dep);
+            }
+            if (missing.Any())
+            {
+                MessageBox.Show("No se encontraron estas DLL junto al plugin: " + string.Join(", ", missing) +
+                                "\nCarpetas buscadas:\n" + string.Join("\n", Script.GetSearchDirectories(pluginDir)) +
+                                "\n\nCopie TODA la carpeta VMAT-TBI-CSI-TMLI (no solo el .dll).", "VMAT AutoPlanner");
             }
         }
 
