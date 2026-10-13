@@ -49,7 +49,17 @@ namespace AutoPlannerHelpers.Context
             }
             catch (Exception e)
             {
-                Logger.GetInstance().LogError($"Error! Unable to generate Eclipse Context instance.\nStep: {step}\nReason: {e.GetType().Name}: {e.Message}\n\n{e.StackTrace}");
+                string hint = "";
+                if (step.StartsWith("Application.CreateApplication"))
+                {
+                    string exe = System.IO.Path.GetFileName(System.Reflection.Assembly.GetEntryAssembly()?.Location ?? "");
+                    hint = "\n\nCAUSA MAS PROBABLE: Eclipse no autorizo la conexion de este programa.\n" +
+                           $"1) Apruebe '{exe}' (y AutoPlannerHelpers.dll) en Eclipse: Tools > Script Approvals (requiere usuario con permiso de aprobar scripts).\n" +
+                           "   En una base de datos NO clinica (t-box) puede registrarse para investigacion/evaluacion.\n" +
+                           "2) Ejecute el programa SIEMPRE desde Eclipse (Tools > Scripts > LaunchAutoPlanner.cs) en una estacion/Citrix con Eclipse 16.1.\n" +
+                           "3) Si ya esta aprobado: la aprobacion se pierde si el .exe se reemplaza o se mueve de carpeta; vuelva a aprobarlo.";
+                }
+                Logger.GetInstance().LogError($"Error! Unable to generate Eclipse Context instance.\nStep: {step}\nReason: {e.GetType().Name}: {e.Message}{hint}\n\n{e.StackTrace}");
                 return true;
             }
 
