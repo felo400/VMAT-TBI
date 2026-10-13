@@ -12,7 +12,19 @@ namespace AutoPlannerHelpers.Context
             else return _instance = new EclipseContext();
         }
 
-        public bool IsInitialized { get => !ReferenceEquals(Application, null); }
+        /// <summary>
+        /// Reset the singleton. Needed when running as an Eclipse binary plugin: the plugin assembly stays loaded in Eclipse
+        /// between executions, so static state from a previous run (patient, plans...) must be discarded
+        /// </summary>
+        public static void ResetInstance() { _instance = null; }
+
+        /// <summary>
+        /// True when the code runs INSIDE Eclipse as a binary plugin (VMATAutoPlanner.esapi.dll). In that case there is no
+        /// ESAPI Application object: the patient comes from the ScriptContext, and saving/closing the patient is done by the
+        /// user in Eclipse (a plugin can't call SaveModifications/ClosePatient)
+        /// </summary>
+        public bool IsPluginMode { get; set; } = false;
+        public bool IsInitialized { get => !ReferenceEquals(Application, null) || IsPluginMode; }
         public Application Application { get; set; } = null;
         public Patient Patient { get; set; } = null;
         public Course Course { get; set; } = null;
@@ -26,7 +38,7 @@ namespace AutoPlannerHelpers.Context
 
         public void ClearContext(bool closePatient = true)
         {
-            if (IsInitialized && closePatient)
+            if (!IsPluginMode && !ReferenceEquals(Application, null) && closePatient)
             {
                 Application.ClosePatient();
                 Patient = null;

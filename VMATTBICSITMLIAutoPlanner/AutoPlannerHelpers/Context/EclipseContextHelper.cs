@@ -106,6 +106,42 @@ namespace AutoPlannerHelpers.Context
         }
 
         /// <summary>
+        /// Initialize the (singleton) Eclipse context from the objects Eclipse hands to a binary plugin (ScriptContext).
+        /// No Application.CreateApplication() is needed in this mode.
+        /// </summary>
+        public static void GenerateEclipseContextFromPlugin(Patient patient, StructureSet ss, Image image, ExternalPlanSetup plan, Course course, User user)
+        {
+            EclipseContext.ResetInstance();
+            EclipseContext ctx = EclipseContext.GetInstance();
+            ctx.IsPluginMode = true;
+            ctx.UserName = user?.Name ?? "";
+            ctx.UserId = user?.Id ?? "";
+            ctx.Patient = patient;
+            if (patient == null) return;
+            Logger.GetInstance().MRN = patient.Id;
+            TryStep("read registrations", () => ctx.Registrations = (patient.Registrations ?? Enumerable.Empty<Registration>()).ToList());
+            TryStep("read CT images", () =>
+            {
+                ctx.CTImages = (patient.Studies ?? Enumerable.Empty<Study>())
+                               .Where(st => st != null && st.Series != null)
+                               .SelectMany(st => st.Series)
+                               .Where(se => se != null && se.Modality == VMS.TPS.Common.Model.Types.SeriesModality.CT && se.Images != null)
+                               .SelectMany(se => se.Images)
+                               .Where(im => im != null && im.Series != null && !double.IsNaN(im.Origin.x))
+                               .ToList();
+            });
+            ctx.StructureSet = ss;
+            if (ss != null) Logger.GetInstance().StructureSet = ss.UID;
+            ctx.ImageFOR = image?.FOR ?? "";
+            if (plan != null)
+            {
+                ctx.VMATPlans = new List<ExternalPlanSetup> { plan };
+                Logger.GetInstance().PlanUIDs = new List<string> { plan.UID };
+            }
+            ctx.Course = course;
+        }
+
+        /// <summary>
         /// Run a non-essential context step. A failure is reported (with the step name) but does not abort the script
         /// </summary>
         private static void TryStep(string step, Action a)

@@ -265,7 +265,7 @@ namespace AutoPlannerOptimizationLoop.Base
                 if (RunSequentialPlansOptimizationLoop(plans)) return true;
             }
             if (ResolveRunOptions(plans)) return true;
-            if (!_data.IsDemo) _data.Application.SaveModifications();
+            if (!_data.IsDemo) _data.Application?.SaveModifications();
             return false;
         }
 
@@ -341,7 +341,7 @@ namespace AutoPlannerOptimizationLoop.Base
             ProvideUIUpdate(100 * ++percentComplete / calcItems, OptimizationLoopUIHelper.PrintPlanOptimizationConstraints(plan, OptimizationSetupHelper.ReadConstraintsFromPlan(plan)));
 
             if (_data.IsDemo) Thread.Sleep(3000);
-            else _data.Application.SaveModifications();
+            else _data.Application?.SaveModifications();
 
             ProvideUIUpdate("Starting optimization loop!");
             //counter to keep track of how many optimization iterations have been performed
@@ -461,7 +461,8 @@ namespace AutoPlannerOptimizationLoop.Base
                     PrintFailedMessage("Optimization", except.Message);
                     return true;
                 }
-                app.SaveModifications();
+                //app is null when running as an Eclipse plugin (the user saves in Eclipse)
+                app?.SaveModifications();
             }
             UpdateOverallProgress(100 * ++overallPercentCompletion / overallCalcItems);
             //check if user wants to stop
@@ -480,7 +481,9 @@ namespace AutoPlannerOptimizationLoop.Base
             else
             {
                 CancellationTokenSource cts = new CancellationTokenSource();
-                WinUtilitiesModified.LaunchWindowsClosingThread(cts.Token, fileNameErrorsWarnings);
+                //the auto-close of Eclipse warning popups is ONLY safe for the stand-alone executable (separate process).
+                //Inside Eclipse (plugin) it could close Eclipse's own windows, so it is disabled there.
+                if (!AutoPlannerHelpers.Context.EclipseContext.GetInstance().IsPluginMode) WinUtilitiesModified.LaunchWindowsClosingThread(cts.Token, fileNameErrorsWarnings);
                 try
                 {
                     CalculationResult calcRes = plan.CalculateDose();
@@ -497,7 +500,8 @@ namespace AutoPlannerOptimizationLoop.Base
                     PrintFailedMessage("Dose calculation", except.Message);
                     return true;
                 }
-                app.SaveModifications();
+                //app is null when running as an Eclipse plugin (the user saves in Eclipse)
+                app?.SaveModifications();
                 cts.Cancel();
             }
             UpdateOverallProgress(100 * ++overallPercentCompletion / overallCalcItems);

@@ -13,6 +13,18 @@ namespace AutoPlannerHelpers.Helpers
         /// <param name="autoSave"></param>
         public static void CloseApplication(bool autoSave)
         {
+            if (EclipseContext.GetInstance().IsPluginMode)
+            {
+                //running inside Eclipse as a binary plugin: ESAPI can't save or close the patient from a plugin.
+                //The modifications stay in Eclipse and the user saves them with the normal Eclipse 'Save' button.
+                Logger.GetInstance().User = $"{EclipseContext.GetInstance().UserName} ({EclipseContext.GetInstance().UserId})";
+                bool modified = !ReferenceEquals(EclipseContext.GetInstance().Patient, null) && EclipseContext.GetInstance().Patient.HasModifiedData;
+                Logger.GetInstance().AppendLogOutput(modified ? "Plugin mode: modifications left in Eclipse (to be saved by the user)" : "No modifications made to database objects!");
+                Logger.GetInstance().ChangesSaved = false;
+                if (Logger.GetInstance().Dump()) MessageBox.Show("Error! Could not save log file!");
+                if (modified) MessageBox.Show("Los cambios quedaron en Eclipse.\nRevíselos y GUÁRDELOS en Eclipse (botón Guardar / Save) si son correctos.\n\nChanges were left in Eclipse: review and SAVE them in Eclipse.");
+                return;
+            }
             Logger.GetInstance().User = $"{EclipseContext.GetInstance().Application.CurrentUser.Name} ({EclipseContext.GetInstance().Application.CurrentUser.Id})";
             //be sure to close the patient before closing the application. Not doing so will result in unclosed timestamps in eclipse
             if (!ReferenceEquals(EclipseContext.GetInstance().Patient, null) && EclipseContext.GetInstance().Patient.HasModifiedData)

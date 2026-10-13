@@ -392,8 +392,24 @@ namespace AutoPlannerOptimizationLoop.ViewModels
                 {
                     OptimizationLoopSettings.ClearSettings();
 
-                    EclipseContext.GetInstance().ClearContext();
-                    EclipseContext.GetInstance().Patient = EclipseContext.GetInstance().Application.OpenPatientById(selection.PatientId);
+                    if (EclipseContext.GetInstance().IsPluginMode)
+                    {
+                        //inside Eclipse (plugin) only the patient currently open in Eclipse can be used
+                        Patient current = EclipseContext.GetInstance().Patient;
+                        if (ReferenceEquals(current, null) || !string.Equals(current.Id, selection.PatientId))
+                        {
+                            Logger.GetInstance().LogError($"En modo plugin solo se puede optimizar el paciente abierto en Eclipse ({current?.Id}).\nAbra el paciente {selection.PatientId} en Eclipse y ejecute el script de nuevo.");
+                            return;
+                        }
+                        //keep the patient (do not close it), only reset the plan/structure set information
+                        EclipseContext.GetInstance().ClearContext(false);
+                        EclipseContext.GetInstance().Patient = current;
+                    }
+                    else
+                    {
+                        EclipseContext.GetInstance().ClearContext();
+                        EclipseContext.GetInstance().Patient = EclipseContext.GetInstance().Application.OpenPatientById(selection.PatientId);
+                    }
                     if(!ReferenceEquals(EclipseContext.GetInstance().Patient, null))
                     {
                         ESAPIThreadContext.ESAPIDispatcher.Invoke(() =>

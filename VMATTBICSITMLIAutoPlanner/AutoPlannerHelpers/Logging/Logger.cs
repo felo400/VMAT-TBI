@@ -62,6 +62,10 @@ namespace AutoPlannerHelpers.Logging
         #endregion
 
         private static Logger _instance;
+        /// <summary>
+        /// Reset the singleton (used by the Eclipse plugin entry point so each execution starts with a clean log)
+        /// </summary>
+        public static void ResetInstance() { _instance = null; }
         //path to location to write log file
         private string _logPath;
         //stringbuilder object to log output from ts generation/manipulation and beam placement

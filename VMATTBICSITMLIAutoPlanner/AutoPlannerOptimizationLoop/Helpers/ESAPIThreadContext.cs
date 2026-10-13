@@ -21,6 +21,15 @@ namespace AutoPlannerOptimizationLoop.Helpers
             ESAPIDispatcher = dispatch;
         }
 
+        /// <summary>
+        /// Overload used by the Eclipse plugin: the ESAPI thread is Eclipse's UI thread
+        /// </summary>
+        public static void Initialize(Dispatcher dispatch, SynchronizationContext context)
+        {
+            ESAPISyncContext = context ?? new DispatcherSynchronizationContext(dispatch);
+            ESAPIDispatcher = dispatch;
+        }
+
         public static void RunOnESAPIThread(Action action)
         {
             ESAPISyncContext?.Post(_ => action(), null);

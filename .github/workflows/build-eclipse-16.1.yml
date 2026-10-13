@@ -56,7 +56,7 @@ jobs:
         shell: pwsh
         run: |
           $app = Join-Path $env:GITHUB_WORKSPACE "bin\VMAT-TBI-CSI-TMLI"
-          foreach ($exe in @("AutoPlannerLauncher.exe","CSIAutoPlanner.exe","TBIAutoPlanner.exe","TMLIAutoPlanner.exe","AutoPlannerOptimizationLoop.exe")) {
+          foreach ($exe in @("VMATAutoPlanner.esapi.dll","AutoPlannerLauncher.exe","CSIAutoPlanner.exe","TBIAutoPlanner.exe","TMLIAutoPlanner.exe","AutoPlannerOptimizationLoop.exe")) {
             if (-not (Test-Path (Join-Path $app $exe))) { throw "No se generó $exe" }
           }
           # Las DLL de Varian NO se incluyen en el paquete (Eclipse las aporta en la estación)

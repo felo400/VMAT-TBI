@@ -257,6 +257,9 @@ namespace TMLIAutoPlanner.ViewModels
         {
             try
             {
+                //the lists are static: clear them so re-running the script (e.g. as an Eclipse plugin) does not duplicate entries
+                TMLIAutoPlannerSettings.AvailableLinacs.Clear();
+                TMLIAutoPlannerSettings.AvailableEnergies.Clear();
                 using (StreamReader reader = new StreamReader(file))
                 {
                     //setup temporary vectors to hold the parsed data
