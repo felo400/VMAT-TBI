@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using VMS.TPS.Common.Model.API;
+using Application = System.Windows.Application;
 
 namespace VMS.TPS
 {
