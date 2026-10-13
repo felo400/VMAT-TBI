@@ -81,3 +81,15 @@ jobs:
           $zip = Join-Path $env:RUNNER_TEMP "VMAT-AutoPlanner-Eclipse16.1-bin.zip"
           Compress-Archive -Path "bin" -DestinationPath $zip -Force
           gh release create $tag $zip "build.log" "build_warnings.log" --target "${{ github.sha }}" --title "Compilado Eclipse 16.1 (build ${{ github.run_number }})" --notes "Carpeta bin compilada para Eclipse/ESAPI 16.1. Descomprimir, copiar la carpeta bin a la ruta de red y seleccionarla en Eclipse (Tools > Scripts > Change Folder). Ver bin/LEEME_INSTALACION.md." --prerelease
+
+      - name: Publicar registro de errores (solo si falla)
+        if: failure()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "failed-build-${{ github.run_number }}"
+          if (Test-Path "build.log") { Select-String -Path "build.log" -Pattern "error" | Select-Object -First 200 | ForEach-Object { $_.Line } | Out-File "build_errors.txt" -Encoding utf8 } else { "sin build.log" | Out-File "build_errors.txt" }
+          $files = @("build_errors.txt")
+          if (Test-Path "build.log") { $files += "build.log" }
+          gh release create $tag @files --target "${{ github.sha }}" --title "Compilacion fallida ${{ github.run_number }}" --notes "Registro de errores" --prerelease
