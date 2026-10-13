@@ -118,12 +118,32 @@ namespace AutoPlannerHelpers.BaseCore
                 }
                 ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Finished identifying beams that need to be removed from {newplan.Id}");
 
+                //Eclipse 16.1 refuses to delete a beam that still has calculated dose ("objects underneath which can not be deleted").
+                //The copy carries the dose of the original plan; it has to be recalculated anyway after separation, so invalidate it first
+                //by re-assigning the dose calculation model (same approach used elsewhere to reset the calculation matrix).
+                ClearDoseOfPlan(newplan);
                 if (RemoveExtraBeams(newplan, beamsToRemove)) return true;
                 ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Removed excess beams from {newplan.Id}");
 
                 count++;
             }
             return false;
+        }
+
+        protected void ClearDoseOfPlan(ExternalPlanSetup plan)
+        {
+            try
+            {
+                if (plan.Dose == null && !plan.IsDoseValid) return;
+                string calcModel = plan.GetCalculationModel(CalculationType.PhotonVolumeDose);
+                plan.ClearCalculationModel(CalculationType.PhotonVolumeDose);
+                if (!string.IsNullOrEmpty(calcModel)) plan.SetCalculationModel(CalculationType.PhotonVolumeDose, calcModel);
+                ProvideUIUpdate($"Dose of {plan.Id} invalidated before removing beams (dose must be recalculated)");
+            }
+            catch (Exception e)
+            {
+                ProvideUIUpdate($"Warning! Could not invalidate dose of {plan.Id}: {e.Message}");
+            }
         }
 
         /// <summary>
