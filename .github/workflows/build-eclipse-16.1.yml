@@ -4,7 +4,7 @@ name: Compilar para Eclipse 16.1
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, eclipse-16.1 ]
 
 jobs:
   build:
