@@ -214,19 +214,29 @@ namespace TMLIAutoPlanner.ViewModels
                 else return true;
             }
 
-            if (EclipseContext.GetInstance().VMATPlans.First().Course.ExternalPlanSetups.Any(x => x.Id.ToLower().Contains("leg") && x.ApprovalStatus != PlanSetupApprovalStatus.Rejected))
+            //legs AP/PA plans: all FFS (Stanford technique, patient rotated) or all HFS (same orientation as the VMAT plan)
+            List<ExternalPlanSetup> legsPlans = EclipseContext.GetInstance().VMATPlans.First().Course.ExternalPlanSetups.Where(x => x.Id.ToLower().Contains("leg") && x.ApprovalStatus != PlanSetupApprovalStatus.Rejected).ToList();
+            bool legsHFS = false;
+            if (legsPlans.Any())
             {
-                if (EclipseContext.GetInstance().VMATPlans.First().Course.ExternalPlanSetups.Where(x => x.Id.ToLower().Contains("leg") && x.ApprovalStatus != PlanSetupApprovalStatus.Rejected).Any(x => x.TreatmentOrientation != PatientOrientation.FeetFirstSupine))
+                bool allFFS = legsPlans.All(x => x.TreatmentOrientation == PatientOrientation.FeetFirstSupine);
+                bool allHFS = legsPlans.All(x => x.TreatmentOrientation == PatientOrientation.HeadFirstSupine);
+                if (allHFS && EclipseContext.GetInstance().VMATPlans.First().TreatmentOrientation == PatientOrientation.HeadFirstSupine)
+                {
+                    legsHFS = true;
+                }
+                else if (!allFFS)
                 {
                     StringBuilder sb = new StringBuilder();
-                    sb.AppendLine($"The AP/PA plan {EclipseContext.GetInstance().VMATPlans.First().Course.ExternalPlanSetups.Where(x => x.Id.ToLower().Contains("legs")).ToList().First(x => x.TreatmentOrientation != PatientOrientation.FeetFirstSupine).Id} is NOT in the FFS orientation!");
-                    sb.AppendLine("THE COUCH SHIFTS FOR THESE PLANS WILL NOT BE ACCURATE! Please fix and try again!");
+                    sb.AppendLine("Legs AP/PA plans orientation: " + string.Join(", ", legsPlans.Select(x => $"{x.Id} = {x.TreatmentOrientation}")));
+                    sb.AppendLine("All legs plans must be EITHER Feet First Supine (Stanford technique) OR Head First Supine (same as the VMAT plan).");
+                    sb.AppendLine("THE COUCH SHIFTS FOR THESE PLANS WOULD NOT BE ACCURATE! Please fix and try again!");
                     Logger.GetInstance().LogError(sb.ToString());
                     return true;
                 }
             }
 
-            Clipboard.SetText(PlanPrepHelper.GetTMLIShiftNote(EclipseContext.GetInstance().VMATPlans.First(), EclipseContext.GetInstance().VMATPlans.First().Course.ExternalPlanSetups.Where(x => x.Id.ToLower().Contains("leg") && x.ApprovalStatus != PlanSetupApprovalStatus.Rejected).ToList()).ToString());
+            Clipboard.SetText(PlanPrepHelper.GetTMLIShiftNote(EclipseContext.GetInstance().VMATPlans.First(), legsPlans, legsHFS).ToString());
             return false;
         }
         protected override bool SeparatePlans()

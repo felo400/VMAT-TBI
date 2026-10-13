@@ -100,14 +100,14 @@ namespace AutoPlannerHelpers.Helpers
             return false;
         }
 
-        public static StringBuilder GetTBIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans)
+        public static StringBuilder GetTBIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans, bool legsHFS = false)
         {
-            return GetTBITMLIShiftNote(vmatPlan, appaPlans, "TBI");
+            return GetTBITMLIShiftNote(vmatPlan, appaPlans, "TBI", legsHFS);
         }
 
-        public static StringBuilder GetTMLIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans)
+        public static StringBuilder GetTMLIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans, bool legsHFS = false)
         {
-            return GetTBITMLIShiftNote(vmatPlan, appaPlans, "TMLI");
+            return GetTBITMLIShiftNote(vmatPlan, appaPlans, "TMLI", legsHFS);
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace AutoPlannerHelpers.Helpers
         /// <param name="vmatPlan"></param>
         /// <param name="appaPlans"></param>
         /// <returns></returns>
-        private static StringBuilder GetTBITMLIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans, string planType)
+        private static StringBuilder GetTBITMLIShiftNote(ExternalPlanSetup vmatPlan, List<ExternalPlanSetup> appaPlans, string planType, bool legsHFS)
         {
             StringBuilder sb = new StringBuilder();
             List<VVector> isoPositions = ExtractIsoPositions(vmatPlan);
@@ -146,7 +146,7 @@ namespace AutoPlannerHelpers.Helpers
                 TT = (vmatPlan.Beams.First(x => !x.IsSetupField).IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
             }
 
-            sb.Append(BuildTBITMLIShiftNote(planType, TT, isoNames, shifts, numVMATIsos, numIsos));
+            sb.Append(BuildTBITMLIShiftNote(planType, TT, isoNames, shifts, numVMATIsos, numIsos, legsHFS));
             return sb;
         }
 
@@ -159,7 +159,7 @@ namespace AutoPlannerHelpers.Helpers
         /// <param name="numVMATIsos"></param>
         /// <param name="numIsos"></param>
         /// <returns></returns>
-        private static StringBuilder BuildTBITMLIShiftNote(string planType, double TT, List<IsocenterModel> isoNames, List<VVector> shifts, int numVMATIsos, int numIsos)
+        private static StringBuilder BuildTBITMLIShiftNote(string planType, double TT, List<IsocenterModel> isoNames, List<VVector> shifts, int numVMATIsos, int numIsos, bool legsHFS = false)
         {
             StringBuilder sb = new StringBuilder();
             if (TT != -1)
@@ -168,7 +168,8 @@ namespace AutoPlannerHelpers.Helpers
             }
             else sb.AppendLine("No couch surface structure found in plan!");
 
-            if (numIsos > numVMATIsos) sb.AppendLine($"VMAT {planType} setup per procedure. Please ensure the matchline on Spinning Manny and the bag matches");
+            if (numIsos > numVMATIsos && legsHFS) sb.AppendLine($"VMAT {planType} setup per procedure. AP/PA legs plans in HFS (same patient orientation, NO rotation): continue the shifts from the previous isocenter");
+            else if (numIsos > numVMATIsos) sb.AppendLine($"VMAT {planType} setup per procedure. Please ensure the matchline on Spinning Manny and the bag matches");
             else sb.AppendLine($"VMAT {planType} setup per procedure. No Spinning Manny.");
             if (TT != -1) sb.AppendLine($"TT = {TT:0.0} cm for all plans");
             sb.AppendLine("Dosimetric shifts SUP to INF:");
@@ -176,7 +177,9 @@ namespace AutoPlannerHelpers.Helpers
             int count = 0;
             foreach (VVector itr in shifts)
             {
-                if (count == numVMATIsos)
+                //rotation instructions only apply when the legs are treated feet-first (Stanford technique). For HFS legs the
+                //shift to the first legs isocenter is a normal shift from the previous isocenter
+                if (count == numVMATIsos && !legsHFS)
                 {
                     //if numVMATisos == numIsos this message won't be displayed. Otherwise, we have exhausted the vmat isos and need to add these lines to the shift note
                     sb.AppendLine("Rotate Spinning Manny, shift to opposite Couch Lat");
