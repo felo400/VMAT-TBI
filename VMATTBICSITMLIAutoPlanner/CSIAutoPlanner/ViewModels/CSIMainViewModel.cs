@@ -417,6 +417,7 @@ namespace CSIAutoPlanner.ViewModels
                                     CSIAutoPlannerSettings.CollimatorRotations.Clear();
                                     CSIAutoPlannerSettings.CollimatorRotations.AddRange(c);
                                 }
+                                else if (parameter == "create DRRs") { if (!string.IsNullOrEmpty(value)) AutoPlannerHelpers.Settings.AutoPlannerHelperSettings.CreateDRRs = bool.Parse(value); }
                                 else if (parameter == "check couch collision")
                                 {
                                     if (!string.IsNullOrEmpty(value)) CSIAutoPlannerSettings.CheckTTCollision = bool.Parse(value);

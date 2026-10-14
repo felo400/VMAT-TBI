@@ -454,7 +454,7 @@ namespace TMLIAutoPlanner.Core
                     b.Id = $"{totalNumVMATBeams + 1} {(direction == GantryDirection.CounterClockwise ? "CCW" : "CW")} {itr.IsocenterId}{(j > 1 ? "90" : "")}";
                     ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Assigned beam id: {b.Id}");
 
-                    b.CreateOrReplaceDRR(DRR);
+                    if (AutoPlannerHelpers.Settings.AutoPlannerHelperSettings.CreateDRRs) b.CreateOrReplaceDRR(DRR);
                     ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Assigned DRR to beam: {b.Id}");
 
                     totalNumVMATBeams++;
@@ -535,7 +535,7 @@ namespace TMLIAutoPlanner.Core
         private void CreateStaticBeam(int beamCount, ExternalPlanSetup plan, string beamPositionId, double gantryAngle, float[,] MLCs, VRect<double> jaws, VVector iso)
         {
             Beam b = plan.AddMLCBeam(ebmpStatic, MLCs, jaws, 90.0, gantryAngle, 0.0, iso);
-            b.CreateOrReplaceDRR(GenerateDRRParameters());
+            if (AutoPlannerHelpers.Settings.AutoPlannerHelperSettings.CreateDRRs) b.CreateOrReplaceDRR(GenerateDRRParameters());
             b.Id = $"{beamCount} {(CalculationHelper.AreEqual(gantryAngle, 0.0) ? "AP" : "PA")} {beamPositionId} Legs";
         }
 

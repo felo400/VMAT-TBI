@@ -336,6 +336,7 @@ namespace TBIAutoPlanner.ViewModels
                                     TBIAutoPlannerSettings.CollimatorRotations.Clear();
                                     TBIAutoPlannerSettings.CollimatorRotations.AddRange(c);
                                 }
+                                else if (parameter == "create DRRs") { if (!string.IsNullOrEmpty(value)) AutoPlannerHelpers.Settings.AutoPlannerHelperSettings.CreateDRRs = bool.Parse(value); }
                                 else if (parameter == "check couch collision")
                                 {
                                     if (!string.IsNullOrEmpty(value)) TBIAutoPlannerSettings.CheckTTCollision = bool.Parse(value);

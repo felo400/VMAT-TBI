@@ -359,6 +359,7 @@ namespace TMLIAutoPlanner.ViewModels
                                     TMLIAutoPlannerSettings.CollimatorRotations.Clear();
                                     TMLIAutoPlannerSettings.CollimatorRotations.AddRange(c);
                                 }
+                                else if (parameter == "create DRRs") { if (!string.IsNullOrEmpty(value)) AutoPlannerHelpers.Settings.AutoPlannerHelperSettings.CreateDRRs = bool.Parse(value); }
                                 else if (parameter == "check couch collision")
                                 {
                                     if (!string.IsNullOrEmpty(value)) TMLIAutoPlannerSettings.CheckTTCollision = bool.Parse(value);

@@ -189,6 +189,11 @@ namespace AutoPlannerHelpers.BaseCore
             {
                 ProvideUIUpdate($"Failed to remove beams in plan {newPlan.Id}");
                 ProvideUIUpdate($"{e.Message}");
+                if (e.Message.ToLower().Contains("underneath"))
+                {
+                    ProvideUIUpdate("CAUSA PROBABLE: los campos de este plan tienen DRR (imagen de referencia). Eclipse 16.1 no deja borrar campos con DRR desde un script.");
+                    ProvideUIUpdate("SOLUCION: separe este plan a mano en Eclipse, o vuelva a crear los campos (Beam Placement) con 'create DRRs=false' en el archivo .ini y repita la separacion.");
+                }
                 ProvideUIUpdate(e.StackTrace, true);
                 return true;
             }

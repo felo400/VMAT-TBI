@@ -516,7 +516,7 @@ namespace CSIAutoPlanner.Core
                     b.Id = beamName;
                     ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Assigned beam id: {beamName}");
 
-                    b.CreateOrReplaceDRR(DRR);
+                    if (AutoPlannerHelpers.Settings.AutoPlannerHelperSettings.CreateDRRs) b.CreateOrReplaceDRR(DRR);
                     ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Assigned DRR to beam: {beamName}");
 
                     beamCount++;
