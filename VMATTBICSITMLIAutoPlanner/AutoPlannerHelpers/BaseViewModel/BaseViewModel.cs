@@ -362,6 +362,7 @@ namespace AutoPlannerHelpers.BaseViewModel
             }
             if (VerifyPlansIntegrity(planTargets)) return;
             if (VerifyTargetsIntegrity(planTargets.SelectMany(x => x.Targets))) return;
+            if (ValidatePlanTypeSpecificTargets(planTargets)) return;
 
             _prescriptions = BuildPlanTypeSpecificPrescriptionList(planTargets);
             if (!_prescriptions.Any()) return;
@@ -381,6 +382,17 @@ namespace AutoPlannerHelpers.BaseViewModel
         protected abstract List<PrescriptionModel> BuildPlanTypeSpecificPrescriptionList(List<PlanTargetsModel> planTargets);
 
         protected abstract void UpdatePlanTypeSpecificStructureOperationViews();
+
+        /// <summary>
+        /// Validacion adicional de los targets segun la tecnica. Devuelve true para detener.
+        /// </summary>
+        protected virtual bool ValidatePlanTypeSpecificTargets(List<PlanTargetsModel> planTargets) { return false; }
+
+        /// <summary>
+        /// Permite a cada tecnica escoger la estructura del paciente que se usara como target principal
+        /// (por defecto, el target de la prescripcion de Eclipse)
+        /// </summary>
+        protected virtual Structure ChooseEclipseMainTarget(Structure rxTarget) { return rxTarget; }
 
         protected bool VerifyTargetsIntegrity(IEnumerable<TargetModel> targets)
         {
@@ -719,6 +731,7 @@ namespace AutoPlannerHelpers.BaseViewModel
                 Structure eclipseTarget = null;
                 if (!string.IsNullOrEmpty(rx.TargetId) && !ReferenceEquals(EclipseContext.GetInstance().StructureSet, null))
                     eclipseTarget = EclipseContext.GetInstance().StructureSet.Structures.FirstOrDefault(s => string.Equals(s.Id, rx.TargetId, StringComparison.OrdinalIgnoreCase) && !s.IsEmpty);
+                try { eclipseTarget = ChooseEclipseMainTarget(eclipseTarget); } catch { }
                 string dicom = eclipseTarget?.DicomType?.ToUpper() ?? "";
                 bool usable = eclipseTarget != null && (dicom == "PTV" || dicom == "CTV" || dicom == "GTV" || dicom == "ITV") && !string.Equals(eclipseTarget.Id, main.TargetId, StringComparison.OrdinalIgnoreCase);
                 if (usable)

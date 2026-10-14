@@ -175,6 +175,54 @@ namespace CSIAutoPlanner.ViewModels
                                                     _boostPlanTotalDose);
         }
 
+        /// <summary>
+        /// CSI: el target del plan inicial debe cubrir todo el neuroeje (cerebro + medula). Si la prescripcion de Eclipse
+        /// apunta a un PTV parcial (p. ej. PTV_Cerebro-C2), se busca un PTV que cubra todo el eje.
+        /// </summary>
+        protected override VMS.TPS.Common.Model.API.Structure ChooseEclipseMainTarget(VMS.TPS.Common.Model.API.Structure rxTarget)
+        {
+            VMS.TPS.Common.Model.API.StructureSet ss = EclipseContext.GetInstance().StructureSet;
+            if (ss == null) return rxTarget;
+            string[] excluded = { "boost", "bst", "ts_", "opt", "prv", "suma", "sum", "ring", "anillo", "z_" };
+            List<VMS.TPS.Common.Model.API.Structure> ptvs = ss.Structures.Where(x => !x.IsEmpty
+                && (string.Equals(x.DicomType, "PTV", StringComparison.OrdinalIgnoreCase) || x.Id.ToLower().StartsWith("ptv"))
+                && !excluded.Any(e => x.Id.ToLower().Contains(e))).ToList();
+            if (!ptvs.Any()) return rxTarget;
+            Func<VMS.TPS.Common.Model.API.Structure, double> extent = x => x.MeshGeometry.Bounds.SizeZ;
+            //1) nombres tipicos de PTV craneoespinal
+            string[] csiNames = { "ptvcsi", "craneoespinal", "craneo-espinal", "cranioespinal", "neuroeje", "csi" };
+            VMS.TPS.Common.Model.API.Structure named = ptvs.Where(x => csiNames.Any(n => StructureTuningHelper.NormalizeStructureId(x.Id).Contains(n.Replace("-", "")))).OrderByDescending(extent).FirstOrDefault();
+            if (named != null && (rxTarget == null || extent(named) > 1.3 * extent(rxTarget))) return named;
+            //2) el PTV mas largo si es claramente mas largo que el de la prescripcion
+            VMS.TPS.Common.Model.API.Structure longest = ptvs.OrderByDescending(extent).First();
+            if (rxTarget == null || extent(longest) > 1.5 * extent(rxTarget)) return longest;
+            return rxTarget;
+        }
+
+        protected override bool ValidatePlanTypeSpecificTargets(List<PlanTargetsModel> planTargets)
+        {
+            try
+            {
+                if (!EclipseContext.GetInstance().IsInitialized || EclipseContext.GetInstance().StructureSet == null) return false;
+                PlanTargetsModel first = planTargets.FirstOrDefault();
+                if (first == null) return false;
+                List<VMS.TPS.Common.Model.API.Structure> targets = first.Targets.Select(t => StructureTuningHelper.GetStructureFromId(t.TargetId)).Where(x => x != null && !x.IsEmpty).ToList();
+                VMS.TPS.Common.Model.API.Structure cord = StructureTuningHelper.FindStructureWithAlias("spinalcord", true);
+                if (!targets.Any() || cord == null) return false;
+                double targetZMin = targets.Min(x => x.MeshGeometry.Bounds.Z);
+                double cordZMin = cord.MeshGeometry.Bounds.Z;
+                if (targetZMin > cordZMin + 50.0)
+                {
+                    MessageBoxResult r = MessageBox.Show($"El target del plan inicial ({string.Join(", ", targets.Select(x => x.Id))}) NO cubre toda la médula ({cord.Id}).\n\n" +
+                        "Para CSI el plan inicial necesita un solo PTV que cubra cerebro + médula completa (por ejemplo PTV_craneoespinal o PTV_CSI).\n" +
+                        "Si lo deja así, el programa pondrá un solo isocentro y fallará.\n\n¿Desea continuar de todos modos?", "Target incompleto para CSI", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    return r != MessageBoxResult.Yes;
+                }
+            }
+            catch (Exception e) { Logger.GetInstance().LogError($"Warning! CSI target validation failed: {e.Message}"); }
+            return false;
+        }
+
         protected override void UpdatePlanTypeSpecificStructureOperationViews()
         {
             CSIAutoPlanTemplate tmpl = _selectedTemplate as CSIAutoPlanTemplate;
