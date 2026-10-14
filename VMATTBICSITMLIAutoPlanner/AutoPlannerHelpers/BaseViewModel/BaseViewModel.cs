@@ -354,7 +354,12 @@ namespace AutoPlannerHelpers.BaseViewModel
 
         protected void SetTargets(List<PlanTargetsModel> planTargets)
         {
-            if (!planTargets.Any()) return;
+            if (planTargets == null || !planTargets.Any()) return;
+            if (_selectedTemplate == null)
+            {
+                MessageBox.Show("Primero haga clic en una PLANTILLA de la lista (Low Dose / Intermediate Risk / High Risk).\n\nLa plantilla trae las restricciones de optimización. Después revise los targets y pulse 'Asignar targets'.", "Falta escoger plantilla");
+                return;
+            }
             if (VerifyPlansIntegrity(planTargets)) return;
             if (VerifyTargetsIntegrity(planTargets.SelectMany(x => x.Targets))) return;
 
@@ -365,8 +370,8 @@ namespace AutoPlannerHelpers.BaseViewModel
             _planOptimizationSetup = BuildPlanOptimizationSetupList();
 
             UpdatePlanTypeSpecificStructureOperationViews();
-            WeakReferenceMessenger.Default.Send(new RequestUpdateOptimizationStructureDerivations(_selectedTemplate.OptimizationStructureDerivations));
-            WeakReferenceMessenger.Default.Send(new RequestUpdateSpecialOptimizationStructures(_selectedTemplate.SpecialOptimizationStructures));
+            WeakReferenceMessenger.Default.Send(new RequestUpdateOptimizationStructureDerivations(_selectedTemplate.OptimizationStructureDerivations ?? new List<StructureOperationModel>()));
+            WeakReferenceMessenger.Default.Send(new RequestUpdateSpecialOptimizationStructures(_selectedTemplate.SpecialOptimizationStructures ?? new List<SpecialOptimizationStructureModel>()));
 
             SpecifyTargetsTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
             StructureTuningTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;

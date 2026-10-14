@@ -155,8 +155,11 @@ namespace TMLIAutoPlanner.ViewModels
 
         protected override void UpdatePlanTypeSpecificStructureOperationViews()
         {
-            List<TSRingStructureModel> rings = (_selectedTemplate as TMLIAutoPlanTemplate).Rings;
-            List<TargetModel> templateTargets = (_selectedTemplate as TMLIAutoPlanTemplate).PlanTargets.SelectMany(x => x.Targets).ToList();
+            TMLIAutoPlanTemplate tmpl = _selectedTemplate as TMLIAutoPlanTemplate;
+            if (tmpl == null) return;
+            List<TSRingStructureModel> rings = tmpl.Rings ?? new List<TSRingStructureModel>();
+            List<TargetModel> templateTargets = (tmpl.PlanTargets ?? new List<PlanTargetsModel>()).Where(x => x != null && x.Targets != null).SelectMany(x => x.Targets).ToList();
+            if (_prescriptions == null) return;
             if (rings.Any())
             {
                 foreach (TSRingStructureModel itr in rings)

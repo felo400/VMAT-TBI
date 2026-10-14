@@ -177,8 +177,11 @@ namespace CSIAutoPlanner.ViewModels
 
         protected override void UpdatePlanTypeSpecificStructureOperationViews()
         {
-            List<TSRingStructureModel> rings = (_selectedTemplate as CSIAutoPlanTemplate).Rings;
-            List<TargetModel> templateTargets = (_selectedTemplate as CSIAutoPlanTemplate).PlanTargets.SelectMany(x => x.Targets).ToList();
+            CSIAutoPlanTemplate tmpl = _selectedTemplate as CSIAutoPlanTemplate;
+            if (tmpl == null) return;
+            List<TSRingStructureModel> rings = tmpl.Rings ?? new List<TSRingStructureModel>();
+            List<TargetModel> templateTargets = (tmpl.PlanTargets ?? new List<PlanTargetsModel>()).Where(x => x != null && x.Targets != null).SelectMany(x => x.Targets).ToList();
+            if (_prescriptions == null) return;
             if (rings.Any())
             {
                 foreach (TSRingStructureModel itr in rings)
@@ -194,7 +197,7 @@ namespace CSIAutoPlanner.ViewModels
                 }
                 WeakReferenceMessenger.Default.Send(new RequestUpdateRingStructures(rings, rings.Select(x => x.TargetId).Any(x => x.ToLower().Contains("ts_")) ? true : false));
             }
-            WeakReferenceMessenger.Default.Send(new RequestUpdateCropOverlapStructures((_selectedTemplate as CSIAutoPlanTemplate).CropAndOverlapStructures, !EclipseContext.GetInstance().IsInitialized));
+            WeakReferenceMessenger.Default.Send(new RequestUpdateCropOverlapStructures(tmpl.CropAndOverlapStructures ?? new List<string>(), !EclipseContext.GetInstance().IsInitialized));
         }
         #endregion
 
