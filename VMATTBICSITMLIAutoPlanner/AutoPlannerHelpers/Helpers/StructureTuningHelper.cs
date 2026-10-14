@@ -105,7 +105,7 @@ namespace AutoPlannerHelpers.Helpers
             Structure theStructure = null;
             if (DoesStructureExistInSS(id))
             {
-                theStructure = EclipseContext.GetInstance().StructureSet.Structures.First(x => string.Equals(x.Id.ToLower(), id.ToLower()));
+                theStructure = FindStructureWithAlias(id, false);
             }
             else if (createIfEmpty)
             {
@@ -160,8 +160,7 @@ namespace AutoPlannerHelpers.Helpers
                 throw new Exception("Error! Eclipse context not initialized! Unable to determine if structure exists in structure set!");
             }
             if (string.IsNullOrEmpty(id)) return false;
-            if (!checkIsEmpty) return EclipseContext.GetInstance().StructureSet.Structures.Any(x => string.Equals(id.ToLower(), x.Id.ToLower()));
-            else return EclipseContext.GetInstance().StructureSet.Structures.Any(x => string.Equals(id.ToLower(), x.Id.ToLower()) && !x.IsEmpty);
+            return FindStructureWithAlias(id, checkIsEmpty) != null;
         }
 
         /// <summary>
@@ -179,17 +178,89 @@ namespace AutoPlannerHelpers.Helpers
             }
             foreach (string itr in ids)
             {
-                if (checkIsEmpty)
-                {
-                    if (EclipseContext.GetInstance().StructureSet.Structures.Any(x => string.Equals(itr.ToLower(), x.Id.ToLower()) && !x.IsEmpty)) return true;
-                }
-                else
-                {
-                    if (EclipseContext.GetInstance().StructureSet.Structures.Any(x => string.Equals(itr.ToLower(), x.Id.ToLower()))) return true;
-                }
+                if (string.IsNullOrEmpty(itr)) continue;
+                if (FindStructureWithAlias(itr, checkIsEmpty) != null) return true;
             }
             return false;
         }
+
+        #region Sinonimos de nombres de estructuras (nomenclatura en espanol)
+        /// <summary>
+        /// Grupos de nombres equivalentes. Si el codigo (o una plantilla) pide una estructura que no existe con ese
+        /// Id exacto, se busca cualquier otro nombre del mismo grupo. La comparacion ignora mayusculas, tildes,
+        /// espacios, guiones y guiones bajos. Las estructuras auxiliares (_Brain, _Spine, TS_...) NO tienen sinonimos.
+        /// </summary>
+        private static readonly List<string[]> AliasGroups = new List<string[]>
+        {
+            new[] { "brain", "cerebro", "encefalo", "encephalon" },
+            new[] { "spinalcord", "medula", "medulaespinal", "canalmedular", "canalespinal", "cord", "medulla", "spinalcanal" },
+            new[] { "larynx", "laringe" },
+            new[] { "brainstem", "tallocerebral", "tallo", "troncocerebral", "tronco" },
+            new[] { "body", "external", "cuerpo", "contornoexterno" },
+            new[] { "opticchiasm", "chiasm", "quiasma", "quiasmaoptico" },
+            new[] { "heart", "corazon" },
+            new[] { "liver", "higado" },
+            new[] { "esophagus", "esofago" },
+            new[] { "bladder", "vejiga" },
+            new[] { "rectum", "recto" },
+            new[] { "thyroid", "tiroides" },
+        };
+
+        /// <summary>
+        /// Normaliza un Id: minusculas, sin tildes y sin espacios, guiones ni guiones bajos
+        /// </summary>
+        public static string NormalizeStructureId(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return string.Empty;
+            string decomposed = id.ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder();
+            foreach (char c in decomposed)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) == System.Globalization.UnicodeCategory.NonSpacingMark) continue;
+                if (c == ' ' || c == '_' || c == '-' || c == '.') continue;
+                sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Busca la estructura con el Id exacto (sin distinguir mayusculas). Si no existe, prueba los sinonimos.
+        /// Devuelve null si no encuentra nada (o si checkIsEmpty y todas las candidatas estan vacias)
+        /// </summary>
+        public static Structure FindStructureWithAlias(string id, bool checkIsEmpty)
+        {
+            StructureSet ss = EclipseContext.GetInstance().StructureSet;
+            if (ss == null || string.IsNullOrEmpty(id)) return null;
+            List<Structure> all = ss.Structures.ToList();
+            Structure exact = all.FirstOrDefault(x => string.Equals(id.ToLower(), x.Id.ToLower()) && (!checkIsEmpty || !x.IsEmpty));
+            if (exact != null) return exact;
+            //nunca usar sinonimos para estructuras auxiliares generadas por el programa
+            if (id.StartsWith("_") || id.ToLower().StartsWith("ts_")) return null;
+
+            string norm = NormalizeStructureId(id);
+            string[] group = AliasGroups.FirstOrDefault(g => g.Contains(norm));
+            if (group == null) return null;
+            List<Structure> candidates = all.Where(x => !checkIsEmpty || !x.IsEmpty).ToList();
+            //1) coincidencia exacta normalizada, en el orden del grupo
+            foreach (string alias in group)
+            {
+                Structure s = candidates.FirstOrDefault(x => NormalizeStructureId(x.Id) == alias);
+                if (s != null) return s;
+            }
+            //2) Id que empieza por el sinonimo (p. ej. "Medula Espinal 1"), excluyendo PRV, TS, OPT, PTV, CTV, etc.
+            string[] excludedPrefixes = { "prv", "ts", "opt", "ptv", "ctv", "gtv", "itv", "z", "ring", "anillo" };
+            foreach (string alias in group.Where(a => a.Length >= 4))
+            {
+                Structure s = candidates.FirstOrDefault(x =>
+                {
+                    string n = NormalizeStructureId(x.Id);
+                    return n.StartsWith(alias) && !excludedPrefixes.Any(p => n.StartsWith(p) && !alias.StartsWith(p));
+                });
+                if (s != null) return s;
+            }
+            return null;
+        }
+        #endregion
 
         /// <summary>
         /// Simple method to determine if there is overlap between the supplied target and normal structures

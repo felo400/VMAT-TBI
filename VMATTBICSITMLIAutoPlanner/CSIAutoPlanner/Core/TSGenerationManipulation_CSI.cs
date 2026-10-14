@@ -76,11 +76,12 @@ namespace CSIAutoPlanner.Core
             //only need spinal cord to determine number of spine isocenters. Otherwise, just need target structures for this class
             if (!StructureTuningHelper.DoesStructureExistInSS(new List<string> { "spinalcord", "spinal_cord" }, true))
             {
-                ProvideUIUpdate("Missing brain and/or spine structures! Please add and try again!", true);
+                ProvideUIUpdate("Error: no se encontro la medula espinal (o esta vacia). Nombres aceptados: Medula, Medula Espinal, Canal Medular, SpinalCord, Spinal_Cord, Cord. Contornee o renombre la estructura y vuelva a intentarlo.", true);
+                ProvideUIUpdate("Estructuras presentes: " + string.Join(", ", EclipseContext.GetInstance().StructureSet.Structures.Select(x => x.Id)), true);
                 return true;
             }
 
-            ProvideUIUpdate(100 * ++counter / calcItems, "Brain and spinal cord structures exist");
+            ProvideUIUpdate(100 * ++counter / calcItems, "Medula espinal encontrada: " + StructureTuningHelper.GetStructureFromId("spinalcord").Id);
             ProvideUIUpdate(100, "Preliminary checks complete!");
             ProvideUIUpdate($"Elapsed time: {ElapsedRunTime}");
             return false;
