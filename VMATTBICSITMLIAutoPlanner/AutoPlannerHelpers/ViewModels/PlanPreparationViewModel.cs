@@ -98,7 +98,7 @@ namespace AutoPlannerHelpers.ViewModels
             {
                 MessageBox.Show("Shifts have been copied to the clipboard! \r\nPaste them into the journal note!");
 
-                GenerateShiftText = "YES";
+                GenerateShiftText = "SÍ";
                 _canSeparatePlans = true;
             }
         }
@@ -130,7 +130,7 @@ namespace AutoPlannerHelpers.ViewModels
                 }
                 MessageBox.Show(sb.ToString());
 
-                SeparatePlanText = "YES";
+                SeparatePlanText = "SÍ";
                 bool doseRecalcNeeded = WeakReferenceMessenger.Default.Send(new RequestDoSeparatedPlansRequireDoseRecalculation());
                 if(WeakReferenceMessenger.Default.Send(new RequestAreSeparatedPlansAutomaticallyRecalculated()) && WeakReferenceMessenger.Default.Send(new RequestDoSeparatedPlansRequireDoseRecalculation()))
                 {
@@ -150,7 +150,7 @@ namespace AutoPlannerHelpers.ViewModels
             if(!recalculationFailed)
             {
                 //let the user know this step has been completed
-                CalculateDoseText = "YES";
+                CalculateDoseText = "SÍ";
             }
         }
     }

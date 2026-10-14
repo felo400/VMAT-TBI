@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerOptimizationLoop.Views"
         mc:Ignorable="d" 
-        Title="Automated Optimization"
+        Title="Optimización automática"
         Background="White"
         SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen">
     <!--region resources-->
@@ -14,7 +14,7 @@
             <Setter Property="Background" Value="White"/>
         </Style>
         <Style TargetType="Button">
-            <Setter Property="Background" Value="LightGray"/>
+            <Setter Property="Background" Value="#FFE082"/>
         </Style>
         <Style TargetType="CheckBox">
             <Setter Property="Background" Value="White"/>
@@ -127,13 +127,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#FFE082"/>
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter Property="TextElement.FontWeight" TargetName="ContentSite" Value="Bold"/>
                             </Trigger>
 
                             <Trigger Property="IsSelected" Value="false">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#FFE082"/>
                                 <Setter Property="Foreground" Value="Black"/>
 
                             </Trigger>
@@ -163,9 +163,9 @@
 
                     <StackPanel>
                         <Grid Margin="0,5,0,10">
-                            <Label Content="VMAT Optimization loop" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="16" FontWeight="Bold" Margin="0,0,0,0"></Label>
-                            <Button x:Name="help" Height="20" Width="75" HorizontalAlignment="Right" VerticalAlignment="Top" Content="Help" Margin="0,7,20,0" Command="{Binding DocumentationCommand}"></Button>
-                            <Button x:Name="quickStart" Height="20" Width="75" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Quick Start" Margin="20,7,0,0" Command="{Binding QuickStartCommand}"></Button>
+                            <Label Content="Ciclo de optimización VMAT" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="16" FontWeight="Bold" Margin="0,0,0,0"></Label>
+                            <Button x:Name="help" Height="20" Width="75" HorizontalAlignment="Right" VerticalAlignment="Top" Content="Ayuda" Margin="0,7,20,0" Command="{Binding DocumentationCommand}"></Button>
+                            <Button x:Name="quickStart" Height="20" Width="75" HorizontalAlignment="Left" VerticalAlignment="Top" Content="Inicio rápido" Margin="20,7,0,0" Command="{Binding QuickStartCommand}"></Button>
                         </Grid>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -182,13 +182,13 @@
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <Button Content="Select Patient" Grid.Column="0" Grid.Row="0" FontWeight="Bold" Width="125" Height="22" Margin="0" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding SelectPatientCommand}"></Button>
+                            <Button Content="Seleccionar paciente" Grid.Column="0" Grid.Row="0" FontWeight="Bold" Width="125" Height="22" Margin="0" HorizontalAlignment="Center" VerticalAlignment="Center" Command="{Binding SelectPatientCommand}"></Button>
                             <Grid Grid.Column="0" Grid.Row="1">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Content="Patient MRN:" Grid.Column="0" Grid.Row="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
+                                <Label Content="Historia (MRN):" Grid.Column="0" Grid.Row="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
                                 <Label Content="{Binding MRN,FallbackValue=mrn}" Grid.Column="1" Grid.Row="0" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" ></Label>
                             </Grid>
                             <Grid Grid.Column="0" Grid.Row="2" Margin="0">
@@ -196,7 +196,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Content="Plan Type:" Grid.Column="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
+                                <Label Content="Tipo de plan:" Grid.Column="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
                                 <Label Content="{Binding SelectedPlanType, FallbackValue=type}" Grid.Column="1" FontSize="14" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" ></Label>
                             </Grid>
                             <Grid Margin="0" Grid.Column="0" Grid.Row="3">
@@ -204,7 +204,7 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Content="Base plan Id:" Grid.Column="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
+                                <Label Content="Id plan base:" Grid.Column="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
                                 <ComboBox ItemsSource="{Binding AvailableBasePlansForOptimization}" SelectedItem="{Binding SelectedBasePlanId}" Grid.Column="1" Width="120" HorizontalAlignment="Left" HorizontalContentAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,4"></ComboBox>
                             </Grid>
                             <Grid Margin="0" Grid.Column="0" Grid.Row="4">
@@ -212,10 +212,10 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <Label Content="Boost plan Id:" Grid.Column="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
+                                <Label Content="Id plan boost:" Grid.Column="0" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center" ></Label>
                                 <ComboBox ItemsSource="{Binding AvailableBoostPlansForOptimization}" SelectedItem="{Binding SelectedBoostPlanId}" Grid.Column="1" Width="120" HorizontalAlignment="Left" HorizontalContentAlignment="Center" VerticalAlignment="Center"></ComboBox>
                             </Grid>
-                            <Label Content="Plan Templates" Grid.Column="0" Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"></Label>
+                            <Label Content="Plantillas" Grid.Column="0" Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"></Label>
                             <ListBox Grid.Column="0" Grid.Row="6" ItemsSource="{Binding PlanTemplates}" DisplayMemberPath="TemplateName" SelectedItem="{Binding SelectedTemplate}" VerticalAlignment="Bottom" HorizontalContentAlignment="Center" Height="100" Width="300" Margin="0,0,0,5"/>
 
                             <Grid Grid.Column="1" Grid.RowSpan="7" Margin="0,0,0,5">
@@ -237,49 +237,49 @@
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
 
-                                <Label Content="Base plan:" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"></Label>
-                                <Label Content="Boost plan:" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Plan base:" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Plan boost:" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0"></Label>
 
-                                <Label Content="Dose per fraction (cGy/fraction):" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Dosis por fracción (cGy/fx):" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <TextBox Text="{Binding BasePlanDosePerFraction}" Grid.Column="1" Grid.Row="1" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Height="20" Margin="0" IsReadOnly="True"></TextBox>
                                 <TextBox Text="{Binding BoostPlanDosePerFraction}" Grid.Column="2" Grid.Row="1" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Height="20" Margin="0" IsReadOnly="True"></TextBox>
 
-                                <Label Content="Number of fractions:" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"/>
+                                <Label Content="Número de fracciones:" Grid.Column="0" Grid.Row="2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"/>
                                 <TextBox Text="{Binding BasePlanNumberOfFractions}" Grid.Column="1" Grid.Row="2" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center"  Width="75" Height="20" Margin="0" IsReadOnly="True"></TextBox>
                                 <TextBox Text="{Binding BoostPlanNumberOfFractions}" Grid.Column="2" Grid.Row="2" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center"  Width="75" Height="20" Margin="0" IsReadOnly="True"></TextBox>
 
-                                <Label Content="Rx dose (cGy):" Grid.Column="0" Grid.Row="3" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Dosis Rx (cGy):" Grid.Column="0" Grid.Row="3" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <TextBox Text="{Binding BasePlanTotalDose}" Grid.Column="1" Grid.Row="3" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Height="20" Margin="0" IsReadOnly="True"></TextBox>
                                 <TextBox Text="{Binding BoostPlanTotalDose}" Grid.Column="2" Grid.Row="3" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Width="75" Height="20" Margin="0" IsReadOnly="True"></TextBox>
 
-                                <Label Content="Normalization volumes:" Grid.Column="0" Grid.Row="4" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Volúmenes de normalización:" Grid.Column="0" Grid.Row="4" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <ComboBox ItemsSource="{Binding AvailableBasePlanNormalizationVolumes}" SelectedItem="{Binding BasePlanNormalizationVolume}" Grid.Column="1" Grid.Row="4" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="20" Margin="0" IsReadOnly="True" IsTabStop="False" ToolTip="{Binding BasePlanNormalizationVolume}"></ComboBox>
                                 <ComboBox ItemsSource="{Binding AvailableBoostPlanNormalizationVolumes}" SelectedItem="{Binding BoostPlanNormalizationVolume}" Grid.Column="2" Grid.Row="4" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" Width="100" Height="20" Margin="0" IsReadOnly="True" IsTabStop="False" ></ComboBox>
 
-                                <Label Content="Run coverage check:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="5" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Verificar cobertura:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="5" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <CheckBox IsChecked="{Binding RunCoverageCheck}" Grid.Column="2" Grid.Row="5" Margin="7,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-                                <Label Content="Copy and save each optimized plan:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="6" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Copiar y guardar cada plan optimizado:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="6" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <CheckBox IsChecked="{Binding CopyAndSaveEachPlan}" Grid.Column="2" Grid.Row="6" Margin="7,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-                                <Label Content="Max number optimizations:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="7" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Máx. número de optimizaciones:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="7" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <TextBox Text="{Binding MaxNumberOfIterations}" Grid.Column="2" Grid.Row="7" Margin="0" Height="20" Width="75" HorizontalAlignment="Left" TextAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Center" ></TextBox>
 
-                                <Label Content="Run additional optimization to lower hotspots:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="8" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="Optimización extra para bajar puntos calientes:" Grid.ColumnSpan="2" Grid.Column="0" Grid.Row="8" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <CheckBox IsChecked="{Binding RunOneAdditionalOptimization}" Grid.Column="2" Grid.Row="8" Margin="7,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
 
-                                <Label Content="PTV V100% (in %):" Grid.Column="0" Grid.Row="9" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                                <Label Content="PTV V100% (en %):" Grid.Column="0" Grid.Row="9" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                                 <TextBox Text="{Binding PlanNormalizationValue}" Grid.Column="1" Grid.Row="9" Height="20" Width="75" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0"></TextBox>
                                 <Button Grid.Column="2" Grid.Row="9" Content="?" Height="22" Width="20" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="7,0,0,0" Command="{Binding ShowPlanNormalizationInfoCommand}"></Button>
                             </Grid>
                         </Grid>
                     </StackPanel>
                 </Grid>
-                <Grid Background="DarkGray" VerticalAlignment="Bottom" Margin="0">
-                    <TabControl Background="DarkGray" HorizontalAlignment="Left" TabStripPlacement="Left" Margin="0">
-                        <TabItem Header="Plan Objectives" Content="{Binding PlanObjectives}" BorderThickness="0,1,1,0"/>
-                        <TabItem Header="Optimization Setup" Content="{Binding OptimizationSetup}" BorderThickness="0,1,1,1"/>
-                        <TabItem Header="Script Configuration" Content="{Binding ScriptConfiguration}" VerticalAlignment="Bottom" BorderThickness="0,1,1,1" Margin="0"/>
+                <Grid Background="#B3E5FC" VerticalAlignment="Bottom" Margin="0">
+                    <TabControl Background="#B3E5FC" HorizontalAlignment="Left" TabStripPlacement="Left" Margin="0">
+                        <TabItem Header="Objetivos del plan" Content="{Binding PlanObjectives}" BorderThickness="0,1,1,0"/>
+                        <TabItem Header="Configurar optimización" Content="{Binding OptimizationSetup}" BorderThickness="0,1,1,1"/>
+                        <TabItem Header="Configuración" Content="{Binding ScriptConfiguration}" VerticalAlignment="Bottom" BorderThickness="0,1,1,1" Margin="0"/>
                     </TabControl>
                 </Grid>
             </StackPanel>

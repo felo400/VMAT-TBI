@@ -146,8 +146,35 @@ namespace VMS.TPS
                 ResourceDictionary keyedOnly = new ResourceDictionary();
                 CopyKeyedResources(styles, keyedOnly);
                 Application.Current.Resources.MergedDictionaries.Add(keyedOnly);
+                //Eclipse has its own (dark) WPF theme. Apply OUR button/textbox/checkbox theme only to OUR windows
+                //(never to Eclipse's windows) when each one is loaded, on whatever thread it lives.
+                EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent, new RoutedEventHandler(OnAnyWindowLoaded));
             }
             _stylesLoaded = true;
+        }
+
+        private static readonly string[] _ourAssemblies = { "CSIAutoPlanner", "TBIAutoPlanner", "TMLIAutoPlanner", "AutoPlannerHelpers", "AutoPlannerOptimizationLoop", "VMATAutoPlanner.esapi" };
+
+        private static void OnAnyWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!(sender is Window w)) return;
+                string asm = w.GetType().Assembly.GetName().Name;
+                if (!_ourAssemblies.Contains(asm) && !(w.Tag is string t && t == "VMATAutoPlanner")) return;
+                ApplyTheme(w);
+            }
+            catch { }
+        }
+
+        internal static void ApplyTheme(FrameworkElement w)
+        {
+            if (w.Resources.Contains("__vmatTheme")) return;
+            foreach (string f in new[] { "ButtonStyle", "TextBoxStyle", "CheckBoxStyle" })
+            {
+                w.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri($"pack://application:,,,/AutoPlannerHelpers;component/ViewStyles/{f}.xaml", UriKind.Absolute) });
+            }
+            w.Resources["__vmatTheme"] = true;
         }
 
         private static void CopyKeyedResources(ResourceDictionary source, ResourceDictionary target)
@@ -169,7 +196,8 @@ namespace VMS.TPS
                 SizeToContent = SizeToContent.WidthAndHeight,
                 WindowStartupLocation = WindowStartupLocation.CenterScreen,
                 ResizeMode = ResizeMode.NoResize,
-                Background = Brushes.WhiteSmoke
+                Background = new SolidColorBrush(Color.FromRgb(0xB3, 0xE5, 0xFC)),
+                Tag = "VMATAutoPlanner"
             };
             StackPanel sp = new StackPanel { Margin = new Thickness(15) };
             sp.Children.Add(new TextBlock
@@ -179,7 +207,8 @@ namespace VMS.TPS
                        (context.ExternalPlanSetup != null ? $"\nPlan abierto: {context.ExternalPlanSetup.Id}" : ""),
                 Margin = new Thickness(0, 0, 0, 10)
             });
-            sp.Children.Add(new TextBlock { Text = "Seleccione / Select:", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 5) });
+            sp.Children.Insert(0, new TextBlock { Text = "Autoplanificación VMAT", FontSize = 20, FontWeight = FontWeights.Bold, Foreground = new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1)), Margin = new Thickness(0, 0, 0, 8) });
+            sp.Children.Add(new TextBlock { Text = "Seleccione:", FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 5) });
 
             void AddButton(string text, Choice c, bool enabled, string tooltip)
             {
@@ -193,7 +222,7 @@ namespace VMS.TPS
             AddButton("VMAT CSI", Choice.CSI, hasSS, hasSS ? "Planificación CSI" : "Abra un structure set primero");
             AddButton("VMAT TBI", Choice.TBI, hasSS, hasSS ? "Planificación TBI" : "Abra un structure set primero");
             AddButton("VMAT TMLI", Choice.TMLI, hasSS, hasSS ? "Planificación TMLI" : "Abra un structure set primero");
-            AddButton("Ciclo de optimización / Optimization loop", Choice.OptLoop, hasPlan, hasPlan ? "Optimizar el plan abierto" : "Abra el plan VMAT creado por el planificador");
+            AddButton("Ciclo de optimización", Choice.OptLoop, hasPlan, hasPlan ? "Optimizar el plan abierto" : "Abra el plan VMAT creado por el planificador");
             sp.Children.Add(new TextBlock
             {
                 Text = "Al terminar, revise los cambios y GUÁRDELOS en Eclipse.",

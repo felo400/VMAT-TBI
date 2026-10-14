@@ -11,7 +11,7 @@
             <Setter Property="Background" Value="White"/>
         </Style>
         <Style TargetType="Button">
-            <Setter Property="Background" Value="LightGray"/>
+            <Setter Property="Background" Value="#FFE082"/>
         </Style>
         <Style TargetType="CheckBox">
             <Setter Property="Background" Value="White"/>
@@ -124,13 +124,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#FFE082"/>
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter Property="TextElement.FontWeight" TargetName="ContentSite" Value="Bold"/>
                             </Trigger>
 
                             <Trigger Property="IsSelected" Value="false">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#FFE082"/>
                                 <Setter Property="Foreground" Value="Black"/>
 
                             </Trigger>
@@ -143,7 +143,7 @@
     <Grid>
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel Name="OPT" Width="600" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0">
-                <Label Content="Optimization Parameters" FontSize="16" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top"></Label>
+                <Label Content="Parámetros de optimización" FontSize="16" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top"></Label>
                 <Grid Height="25" Width ="575" HorizontalAlignment="Center" Margin="0,5,0,5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -151,10 +151,10 @@
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0" Content="Add Constraint" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddOptimizationConstraintCommand}"/>
-                    <Button Content="Get Constraints From Plan" Grid.Column="1" Width="150" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding GetOptConstraintsFromPlanCommand}"/>
-                    <Button Content="Get Constraints From Logs" Grid.Column="2" Width="150" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding GetOptConstraintsFromLogsCommand}"/>
-                    <Button Grid.Column="3" Content="Clear List" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding ClearOptimizationConstraintListCommand}"/>
+                    <Button Grid.Column="0" Content="Agregar restricción" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddOptimizationConstraintCommand}"/>
+                    <Button Content="Restricciones desde el plan" Grid.Column="1" Width="150" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding GetOptConstraintsFromPlanCommand}"/>
+                    <Button Content="Restricciones desde registros" Grid.Column="2" Width="150" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding GetOptConstraintsFromLogsCommand}"/>
+                    <Button Grid.Column="3" Content="Borrar lista" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding ClearOptimizationConstraintListCommand}"/>
                 </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -165,11 +165,11 @@
                         <ColumnDefinition Width="0.7*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Label Content="Structure Id" Grid.Column="0" HorizontalAlignment="Center"/>
-                    <Label Content="Constraint Type" Grid.Column="1" HorizontalAlignment="Center"/>
-                    <Label Content="Volume (%)" Grid.Column="2" HorizontalAlignment="Center"/>
-                    <Label Content="Dose (cGy)" Grid.Column="3" HorizontalAlignment="Center"/>
-                    <Label Content="Priority" Grid.Column="4" HorizontalAlignment="Center"/>
+                    <Label Content="Id estructura" Grid.Column="0" HorizontalAlignment="Center"/>
+                    <Label Content="Tipo de restricción" Grid.Column="1" HorizontalAlignment="Center"/>
+                    <Label Content="Volumen (%)" Grid.Column="2" HorizontalAlignment="Center"/>
+                    <Label Content="Dosis (cGy)" Grid.Column="3" HorizontalAlignment="Center"/>
+                    <Label Content="Prioridad" Grid.Column="4" HorizontalAlignment="Center"/>
                 </Grid>
                 <ScrollViewer Height="435" Width="595" Margin="10,10,5,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" Style="{StaticResource ScrollViewerStyle}">
                     <ItemsControl x:Name="OptimizationConstraintsSP" ItemsSource="{Binding PlanOptimizationConstraints}">
@@ -194,7 +194,7 @@
                                                     <TextBox Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding QueryVolume}" Margin="1"/>
                                                     <TextBox Grid.Column="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding QueryDose}" Margin="1"/>
                                                     <TextBox Grid.Column="4" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding Priority}" Margin="1"/>
-                                                    <Button Content="Clear" Grid.Column="5" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=OptimizationConstraintsSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
+                                                    <Button Content="Borrar" Grid.Column="5" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=OptimizationConstraintsSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -204,7 +204,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </ScrollViewer>
-                <Button Content="Confirm and Begin Optimization" FontWeight="Bold" Width="240" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,5,0,0" Command="{Binding StartOptimizationCommand}"></Button>
+                <Button Content="Confirmar e iniciar optimización" FontWeight="Bold" Width="240" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,5,0,0" Command="{Binding StartOptimizationCommand}"></Button>
             </StackPanel>
         </Border>
     </Grid>

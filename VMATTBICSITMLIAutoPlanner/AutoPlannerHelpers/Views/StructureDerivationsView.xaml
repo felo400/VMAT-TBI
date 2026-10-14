@@ -17,9 +17,9 @@
             <StackPanel HorizontalAlignment="Center" Margin="0">
                 <Label Content="{Binding ViewHeaderLabel, FallbackValue=Target Derivations}" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"></Label>
                 <Grid Height="25" MinWidth="650" HorizontalAlignment="Stretch" Margin="20,5,20,10">
-                    <Button Content="Add Derivation" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddStructureOperationCommand}"/>
-                    <Button Content="Add Defaults" Width="100" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding AddDefaultStructureOperationsCommand}"/>
-                    <Button Content="Clear List" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding RemoveAllStructureOperationsCommand}"/>
+                    <Button Content="Agregar derivación" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddStructureOperationCommand}"/>
+                    <Button Content="Agregar predeterminados" Width="100" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding AddDefaultStructureOperationsCommand}"/>
+                    <Button Content="Borrar lista" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding RemoveAllStructureOperationsCommand}"/>
                 </Grid>
                 <Grid IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
@@ -52,7 +52,7 @@
 
                         <!-- Column 0: Structure A -->
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Structure A"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Estructura A"/>
                         </Border>
 
                         <!-- Column 1: (no header) -->
@@ -62,12 +62,12 @@
 
                         <!-- Column 2: Operation -->
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Operation"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Operación"/>
                         </Border>
 
                         <!-- Column 3: Structure B -->
                         <Border Grid.Column="3" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Structure B"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Estructura B"/>
                         </Border>
 
                         <!-- Column 4: (no header) -->
@@ -77,12 +77,12 @@
 
                         <!-- Column 5: Output Structure -->
                         <Border Grid.Column="5" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Output Structure"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Estructura resultante"/>
                         </Border>
 
                         <!-- Column 6: Is Temporary -->
                         <Border Grid.Column="6" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Temp?"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="¿Temp?"/>
                         </Border>
 
                         <!-- Column 7: (no header / flexible filler) -->
@@ -114,7 +114,7 @@
                                             <ColumnDefinition Width="Auto" SharedSizeGroup="col7"/>
                                         </Grid.ColumnDefinitions>
                                         <ComboBox Grid.Column="0" MinWidth="120" HorizontalContentAlignment="Center" ItemsSource="{Binding Path=DataContext.StructureIds, ElementName=StructureDerivationSP}" SelectedItem="{Binding StructureA}" Margin="1"/>
-                                        <Button Grid.Column="1" MinWidth="70" Content="Margin A" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, ElementName=StructureDerivationSP, Mode=TwoWay}" ToolTip="{Binding MarginA.AxisAlignedMargins}" Margin="1">
+                                        <Button Grid.Column="1" MinWidth="70" Content="Margen A" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, ElementName=StructureDerivationSP, Mode=TwoWay}" ToolTip="{Binding MarginA.AxisAlignedMargins}" Margin="1">
                                             <Button.CommandParameter>
                                                 <MultiBinding Converter="{StaticResource TupleConverter}">
                                                     <Binding Path="StructureA" />
@@ -141,7 +141,7 @@
                                                 </Style>
                                             </ComboBox.Style>
                                         </ComboBox>
-                                        <Button Grid.Column="4" MinWidth="70" Content="Margin B" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, ElementName=StructureDerivationSP, Mode=TwoWay}" ToolTip="{Binding MarginB.AxisAlignedMargins}" Margin="1">
+                                        <Button Grid.Column="4" MinWidth="70" Content="Margen B" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, ElementName=StructureDerivationSP, Mode=TwoWay}" ToolTip="{Binding MarginB.AxisAlignedMargins}" Margin="1">
                                             <Button.Style>
                                                 <Style TargetType="Button">
                                                     <Setter Property="Visibility" Value="Visible" />
@@ -167,14 +167,14 @@
                                             </Behaviors:Interaction.Triggers>
                                         </ComboBox>
                                         <CheckBox IsChecked="{Binding IsTemporary}" Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0"/>
-                                        <Button Content="Clear" MinWidth="50" Grid.Column="7" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=StructureDerivationSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
+                                        <Button Content="Borrar" MinWidth="50" Grid.Column="7" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=StructureDerivationSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
                 </Grid>
-                <Button Content="Perform Structure Derivations" FontWeight="Bold" Width="240" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,5,0,0" Command="{Binding PerformTSGenerationManipulationCommand}"/>
+                <Button Content="Realizar derivaciones" FontWeight="Bold" Width="240" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,5,0,0" Command="{Binding PerformTSGenerationManipulationCommand}"/>
             </StackPanel>
         </Border>
     </Grid>

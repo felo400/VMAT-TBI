@@ -11,12 +11,12 @@
         <Border BorderBrush="Black" BorderThickness="1,0,0,0">
             <StackPanel HorizontalAlignment="Center" MinWidth="500">
                 <Grid Margin="5">
-                    <Label Content="Special Optimization Structures" FontSize="20" HorizontalAlignment="Center" Margin="5"/>
+                    <Label Content="Estructuras especiales de optimización" FontSize="20" HorizontalAlignment="Center" Margin="5"/>
                     <Button Content="?" Width="20" MaxHeight="24" HorizontalAlignment="Right" Margin="5" Command="{Binding DisplayInfoCommand}"/>
                 </Grid>
                 <Grid Margin="5,5,5,10">
-                    <Button Content="Add Defaults" Width="120" HorizontalAlignment="Left" Margin="5" Command="{Binding AddDefaultSpecialOptStructuresCommand}"/>
-                    <Button Content="Clear List" Width="100" HorizontalAlignment="Right" Margin="5" Command="{Binding RemoveAllSpecialOptStructuresCommand}"/>
+                    <Button Content="Agregar predeterminados" Width="120" HorizontalAlignment="Left" Margin="5" Command="{Binding AddDefaultSpecialOptStructuresCommand}"/>
+                    <Button Content="Borrar lista" Width="100" HorizontalAlignment="Right" Margin="5" Command="{Binding RemoveAllSpecialOptStructuresCommand}"/>
                 </Grid>
 
                 <Grid HorizontalAlignment="Center" IsSharedSizeScope="True">
@@ -45,11 +45,11 @@
                         </Grid.Resources>
 
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Dicom Type"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Tipo DICOM"/>
                         </Border>
 
                         <Border Grid.Column="1" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Structure Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id estructura"/>
                         </Border>
 
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
@@ -72,7 +72,7 @@
                                         </Grid.ColumnDefinitions>
                                         <Label Grid.Column="0" HorizontalAlignment="Center" Content="{Binding DICOMType}" Margin="15,2,15,2"/>
                                         <TextBlock Grid.Column="1" HorizontalAlignment="Center" Text="{Binding StructureId}" Margin="15,2,15,2"/>
-                                        <Button Content="Clear" Grid.Column="2" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=TSStructureSP}" CommandParameter="{Binding}" Height="20" MinWidth="90" Margin="15,2,15,2"/>
+                                        <Button Content="Borrar" Grid.Column="2" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=TSStructureSP}" CommandParameter="{Binding}" Height="20" MinWidth="90" Margin="15,2,15,2"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

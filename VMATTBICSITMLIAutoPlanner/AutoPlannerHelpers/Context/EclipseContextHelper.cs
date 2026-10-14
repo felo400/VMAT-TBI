@@ -98,6 +98,7 @@ namespace AutoPlannerHelpers.Context
                     if (plan != null) Logger.GetInstance().PlanUIDs = new List<string> { plan.UID };
                 });
             }
+            TryStep("read prescription", () => EclipseContext.GetInstance().Prescription = AutoPlannerHelpers.Helpers.PrescriptionHelper.Find(pat, EclipseContext.GetInstance().VMATPlans.FirstOrDefault(), EclipseContext.GetInstance().StructureSet));
             if (!string.IsNullOrEmpty(CourseID))
             {
                 TryStep("open course", () => EclipseContext.GetInstance().Course = (pat.Courses ?? Enumerable.Empty<Course>()).FirstOrDefault(x => x != null && string.Equals(CourseID, x.Id)));
@@ -139,6 +140,7 @@ namespace AutoPlannerHelpers.Context
                 Logger.GetInstance().PlanUIDs = new List<string> { plan.UID };
             }
             ctx.Course = course;
+            TryStep("read prescription", () => ctx.Prescription = AutoPlannerHelpers.Helpers.PrescriptionHelper.Find(patient, plan, ss));
         }
 
         /// <summary>

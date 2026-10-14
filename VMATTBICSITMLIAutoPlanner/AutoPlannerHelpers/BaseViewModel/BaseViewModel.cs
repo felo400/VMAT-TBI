@@ -226,11 +226,11 @@ namespace AutoPlannerHelpers.BaseViewModel
             HelpGuideCommand = new RelayCommand(LaunchHelpGuide);
             WindowClosingCommand = new RelayCommand(WindowClosing);
 
-            SpecifyTargetsTabBackground = Brushes.PaleVioletRed;
-            StructureTuningTabBackground = Brushes.LightGray;
-            OptimizationStructureDerivationBackground = Brushes.LightGray;
-            BeamPlacementTabBackground = Brushes.LightGray;
-            OptimizationSetupTabBackground = Brushes.LightGray;
+            SpecifyTargetsTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
+            StructureTuningTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
+            OptimizationStructureDerivationBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
+            BeamPlacementTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
+            OptimizationSetupTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
 
             InitializeGeneralMessengers();
             PerformPlanTypeSpecificInitialization();
@@ -251,20 +251,20 @@ namespace AutoPlannerHelpers.BaseViewModel
 
                     if (!PhysicianTargetApprovalRequired() || EclipseContext.GetInstance().StructureSet.Structures.Any(x => x.ApprovalHistory.First().ApprovalStatus == StructureApprovalStatus.Approved && x.Id.ToLower().Contains("ptv")))
                     {
-                        SetTargetsTabBackground = Brushes.PaleVioletRed;
-                        TargetStructureDerivationsBackground = Brushes.LightGray;
+                        SetTargetsTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
+                        TargetStructureDerivationsBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
                     }
                     else
                     {
-                        TargetStructureDerivationsBackground = Brushes.PaleVioletRed;
-                        SetTargetsTabBackground = Brushes.LightGray;
+                        TargetStructureDerivationsBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
+                        SetTargetsTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
                     }
                 }
             }
             else
             {
-                TargetStructureDerivationsBackground = Brushes.LightGray;
-                SetTargetsTabBackground = Brushes.PaleVioletRed;
+                TargetStructureDerivationsBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Neutral;
+                SetTargetsTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
                 List<ExportCTModel> models = new List<ExportCTModel>
                 {
                     new ExportCTModel("1", "CT 1", 100, DateTime.Now.ToString("yyyy-mm-dd")),
@@ -345,7 +345,7 @@ namespace AutoPlannerHelpers.BaseViewModel
                 return;
             }
             Logger.GetInstance().AddedPrelimTargetsStructures = generateTargets.AddedTargetstructures;
-            TargetStructureDerivationsBackground = Brushes.ForestGreen;
+            TargetStructureDerivationsBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
             StructureIdsPostUnion = EclipseContext.GetInstance().StructureSet.Structures.Select(x => x.Id).ToList();
             if (showCompletionMessage) MessageBox.Show("Structure set is prepared and ready for physician to review targets!");
         }
@@ -368,9 +368,9 @@ namespace AutoPlannerHelpers.BaseViewModel
             WeakReferenceMessenger.Default.Send(new RequestUpdateOptimizationStructureDerivations(_selectedTemplate.OptimizationStructureDerivations));
             WeakReferenceMessenger.Default.Send(new RequestUpdateSpecialOptimizationStructures(_selectedTemplate.SpecialOptimizationStructures));
 
-            SpecifyTargetsTabBackground = Brushes.ForestGreen;
-            StructureTuningTabBackground = Brushes.PaleVioletRed;
-            OptimizationStructureDerivationBackground = Brushes.PaleVioletRed;
+            SpecifyTargetsTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
+            StructureTuningTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
+            OptimizationStructureDerivationBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
         }
 
         protected abstract List<PrescriptionModel> BuildPlanTypeSpecificPrescriptionList(List<PlanTargetsModel> planTargets);
@@ -468,9 +468,9 @@ namespace AutoPlannerHelpers.BaseViewModel
             StructureIdsPostUnion = EclipseContext.GetInstance().StructureSet.Structures.Select(x => x.Id).ToList();
             UpdateOptimizationSetup(generateTS);
 
-            StructureTuningTabBackground = Brushes.ForestGreen;
-            OptimizationStructureDerivationBackground = Brushes.ForestGreen;
-            BeamPlacementTabBackground = Brushes.PaleVioletRed;
+            StructureTuningTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
+            OptimizationStructureDerivationBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
+            BeamPlacementTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
 
             Logger.GetInstance().AddedStructures = generateTS.AddedStructureIds;
             Logger.GetInstance().OptimizationStructureDerivations = operations;
@@ -514,8 +514,8 @@ namespace AutoPlannerHelpers.BaseViewModel
             }
             WeakReferenceMessenger.Default.Send(new RequestUpdateOptimizationConstraintsMessage(_planOptimizationSetup));
 
-            BeamPlacementTabBackground = Brushes.ForestGreen;
-            OptimizationSetupTabBackground = Brushes.PaleVioletRed;
+            BeamPlacementTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
+            OptimizationSetupTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
         }
 
         protected abstract GeneratePlansAndPlaceBeamsBase GetBeamPlacementClassInstanceForPlanType(string linac, string energy, bool contourOverlap, double overlapMargin, List<PlanIsocenterModel> PlanIsocenters);
@@ -646,7 +646,7 @@ namespace AutoPlannerHelpers.BaseViewModel
                     }
                 }
                 Logger.GetInstance().OpType = ScriptOperationType.FullPreparationForOptimization;
-                OptimizationSetupTabBackground = Brushes.ForestGreen;
+                OptimizationSetupTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
             }
             else Logger.GetInstance().LogError("Error! No optimization constraints assigned!");
         }
@@ -674,12 +674,68 @@ namespace AutoPlannerHelpers.BaseViewModel
             InitialDosePerFraction = _selectedTemplate.InitialRxDosePerFx;
             InitialNumberOfFractions = _selectedTemplate.InitialRxNumberOfFractions;
             UpdatePlanTypeSpecificUIWithPlanTemplate();
-            WeakReferenceMessenger.Default.Send(new RequestUpdatePlanTargetsList(_selectedTemplate.PlanTargets));
-            WeakReferenceMessenger.Default.Send(new RequestUpdateTargetDerivationOperations(_selectedTemplate.TargetDerivationOperations));
+            List<PlanTargetsModel> planTargets = _selectedTemplate.PlanTargets;
+            List<StructureOperationModel> targetOps = _selectedTemplate.TargetDerivationOperations;
+            ApplyEclipsePrescription(ref planTargets, ref targetOps);
+            WeakReferenceMessenger.Default.Send(new RequestUpdatePlanTargetsList(planTargets));
+            WeakReferenceMessenger.Default.Send(new RequestUpdateTargetDerivationOperations(targetOps));
             Logger.GetInstance().Template = _selectedTemplate.TemplateName;
         }
 
         protected abstract void UpdatePlanTypeSpecificUIWithPlanTemplate();
+
+        private bool _rxMessageShown = false;
+
+        /// <summary>
+        /// If a prescription was found in Eclipse (plan open or plan on the same CT), use its dose per fraction, number of fractions
+        /// and target instead of the template values. The template target (e.g. PTV_CSI / PTV_Body) is then created as an exact copy
+        /// of the Eclipse target, so rings, crops and optimization constraints of the template keep working. Optimization constraints
+        /// are rescaled automatically to the new total dose.
+        /// </summary>
+        private void ApplyEclipsePrescription(ref List<PlanTargetsModel> planTargets, ref List<StructureOperationModel> targetOps)
+        {
+            EclipsePrescriptionModel rx = EclipseContext.GetInstance().Prescription;
+            if (rx == null || !rx.IsValid || planTargets == null || !planTargets.Any() || !planTargets.First().Targets.Any()) return;
+            try
+            {
+                InitialDosePerFraction = Math.Round(rx.DosePerFractionCGy, 2);
+                InitialNumberOfFractions = rx.NumberOfFractions;
+                PlanTargetsModel first = planTargets.First();
+                TargetModel main = first.Targets.OrderByDescending(t => t.TargetRxDose).First();
+                double scale = rx.TotalDoseCGy / main.TargetRxDose;
+                List<PlanTargetsModel> newTargets = new List<PlanTargetsModel>();
+                foreach (PlanTargetsModel p in planTargets)
+                {
+                    newTargets.Add(new PlanTargetsModel(p.PlanId, p.Targets.Select(t => ReferenceEquals(p, first) ? new TargetModel(t.TargetId, Math.Round(t.TargetRxDose * scale, 1), t.TsTargetId) : new TargetModel(t.TargetId, t.TargetRxDose, t.TsTargetId))));
+                }
+                planTargets = newTargets;
+
+                string targetInfo = "";
+                Structure eclipseTarget = null;
+                if (!string.IsNullOrEmpty(rx.TargetId) && !ReferenceEquals(EclipseContext.GetInstance().StructureSet, null))
+                    eclipseTarget = EclipseContext.GetInstance().StructureSet.Structures.FirstOrDefault(s => string.Equals(s.Id, rx.TargetId, StringComparison.OrdinalIgnoreCase) && !s.IsEmpty);
+                string dicom = eclipseTarget?.DicomType?.ToUpper() ?? "";
+                bool usable = eclipseTarget != null && (dicom == "PTV" || dicom == "CTV" || dicom == "GTV" || dicom == "ITV") && !string.Equals(eclipseTarget.Id, main.TargetId, StringComparison.OrdinalIgnoreCase);
+                if (usable)
+                {
+                    targetOps = new List<StructureOperationModel> { new StructureOperationModel(eclipseTarget.Id, StructureDerivationOperation.CopyContractExpand, main.TargetId, new StructureMarginModel(0.0)) };
+                    targetInfo = $"\nTarget: se usará su estructura '{eclipseTarget.Id}' (copiada como '{main.TargetId}' para la plantilla).";
+                }
+                else if (eclipseTarget != null && string.Equals(eclipseTarget.Id, main.TargetId, StringComparison.OrdinalIgnoreCase)) targetInfo = $"\nTarget: '{main.TargetId}'.";
+                else targetInfo = $"\nTarget: no se encontró un PTV/CTV contorneado llamado '{rx.TargetId}'; se usa el target de la plantilla ('{main.TargetId}').";
+
+                Logger.GetInstance().AppendLogOutput($"Prescription taken from Eclipse: {rx}");
+                if (!_rxMessageShown)
+                {
+                    _rxMessageShown = true;
+                    MessageBox.Show($"Prescripción tomada de Eclipse:\n{rx.DosePerFractionCGy:0.0} cGy x {rx.NumberOfFractions} fracciones = {rx.TotalDoseCGy:0.0} cGy\n(plan {rx.SourcePlanId}, curso {rx.SourceCourseId}{(rx.FromRTPrescription ? ", prescripción de ARIA" : "")}){targetInfo}\n\nLas restricciones de la plantilla se reescalan a esta dosis. Revise antes de continuar.", "Prescripción");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.GetInstance().LogError($"Warning! Could not apply the Eclipse prescription: {e.Message}");
+            }
+        }
         #endregion
 
         #region script configuration

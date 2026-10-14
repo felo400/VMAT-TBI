@@ -5,29 +5,29 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerOptimizationLoop.Prompts"
         mc:Ignorable="d"
-                Title="SelectPatient" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+                Title="Seleccionar paciente" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC">
     <Grid>
         <StackPanel>
             <Grid VerticalAlignment="Top" Background="White" Height="Auto">
                 <StackPanel>
-                    <Label Content="Manual Entry" FontWeight="Bold" VerticalAlignment="Top" HorizontalAlignment="Center"/>
+                    <Label Content="Entrada manual" FontWeight="Bold" VerticalAlignment="Top" HorizontalAlignment="Center"/>
                     <Grid Margin="10,0,10,10" HorizontalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Label Content="Patient MRN:" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
+                        <Label Content="Historia (MRN):" Grid.Column="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0"></Label>
                         <TextBox x:Name="MRNTB" Height="22" Width="120" Grid.Column="1" TextAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0"></TextBox>
                     </Grid>
                 </StackPanel>
             </Grid>
             <Grid VerticalAlignment="Bottom" Height="Auto">
                 <StackPanel>
-                    <Label Content="Select Patient From Script Logs" FontWeight="Bold" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5"/>
+                    <Label Content="Seleccionar paciente desde registros" FontWeight="Bold" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5"/>
                     <ListBox x:Name="mrnList" Grid.Column="0" Grid.Row="1" ItemsSource="{Binding PatientMRNs}" HorizontalContentAlignment="Center" Height="300" Width="160" Margin="10,0,10,10" SelectionChanged="mrnList_SelectionChanged"/>
                     <Grid>
                     </Grid>
-                    <Button Content="Open Patient" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="100" Margin="0,0,0,5" Click="OpenPatient_Click"/>
+                    <Button Content="Abrir paciente" HorizontalAlignment="Center" VerticalAlignment="Bottom" Width="100" Margin="0,0,0,5" Click="OpenPatient_Click"/>
                 </StackPanel>
             </Grid>
         </StackPanel>

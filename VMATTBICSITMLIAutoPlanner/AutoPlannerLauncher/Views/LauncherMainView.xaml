@@ -5,14 +5,14 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerLauncher.Views"
         mc:Ignorable="d"
-        Title="Launcher" SizeToContent="WidthAndHeight" Background="DarkGray" WindowStartupLocation="CenterScreen">
+        Title="Lanzador" SizeToContent="WidthAndHeight" Background="#B3E5FC" WindowStartupLocation="CenterScreen">
     <Grid Margin="10">
         <StackPanel>
-            <Label Content="Please select an option:" HorizontalAlignment="Center" FontWeight="Bold" Margin="5"/>
+            <Label Content="Seleccione una opción:" HorizontalAlignment="Center" FontWeight="Bold" Margin="5"/>
             <Button Content="VMAT TBI" Width="160" Margin="5" Command="{Binding LaunchVMATTBICommand}"/>
             <Button Content="VMAT CSI" Width="160" Margin="5" Command="{Binding LaunchVMATCSICommand}"/>
             <Button Content="VMAT TMLI" Width="160" Margin="5" Command="{Binding LaunchVMATTMLICommand}"/>
-            <Button Content="Launch Optimization Loop" Width="160" Margin="5" Visibility="{Binding LaunchOptimizationLoopVisible, FallbackValue=Collapsed}" Command="{Binding LaunchOptimizationLoopCommand}"/>
+            <Button Content="Iniciar ciclo de optimización" Width="160" Margin="5" Visibility="{Binding LaunchOptimizationLoopVisible, FallbackValue=Collapsed}" Command="{Binding LaunchOptimizationLoopCommand}"/>
         </StackPanel>
     </Grid>
 </Window>

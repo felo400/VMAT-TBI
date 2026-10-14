@@ -12,7 +12,7 @@
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel HorizontalAlignment="Center" Margin="0">
                 <Grid MinWidth="500" Margin="5,5,5,10">
-                    <Label Content="Specify CT Image to Export" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/>
+                    <Label Content="CT a exportar" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"/>
                     <Button Content="?" HorizontalAlignment="Right" Width="24" Height="20" Margin="0,0,10,0" Command="{Binding ShowExportCTInfoCommand}"></Button>
                 </Grid>
                 <Grid HorizontalAlignment="Center" IsSharedSizeScope="True">
@@ -43,23 +43,23 @@
                         </Grid.Resources>
 
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Series Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id serie"/>
                         </Border>
 
                         <Border Grid.Column="1" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="CT Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id CT"/>
                         </Border>
 
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="# of Images"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="# de imágenes"/>
                         </Border>
 
                         <Border Grid.Column="3" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Creation Date"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Fecha de creación"/>
                         </Border>
 
                         <Border Grid.Column="4" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Select?"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="¿Seleccionar?"/>
                         </Border>
                     </Grid>
                     <ScrollViewer Grid.Row="1" MaxHeight="350" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalScrollBarVisibility="Auto">
@@ -79,10 +79,10 @@
                                             <ColumnDefinition Width="Auto" SharedSizeGroup="col3"/>
                                             <ColumnDefinition Width="*" SharedSizeGroup="col4"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox Grid.Column="0" Text="{Binding SeriesId}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="DarkGray" Margin="5"/>
-                                        <TextBox Grid.Column="1" Text="{Binding CTId}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="DarkGray" Margin="5"/>
-                                        <TextBox Grid.Column="2" Text="{Binding NumberOfSlices}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="DarkGray" Margin="5"/>
-                                        <TextBox Grid.Column="3" Text="{Binding CreationDate}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="DarkGray" Margin="5"/>
+                                        <TextBox Grid.Column="0" Text="{Binding SeriesId}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="#B3E5FC" Margin="5"/>
+                                        <TextBox Grid.Column="1" Text="{Binding CTId}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="#B3E5FC" Margin="5"/>
+                                        <TextBox Grid.Column="2" Text="{Binding NumberOfSlices}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="#B3E5FC" Margin="5"/>
+                                        <TextBox Grid.Column="3" Text="{Binding CreationDate}" HorizontalContentAlignment="Center" IsReadOnly="True" MinWidth="75" Background="#B3E5FC" Margin="5"/>
                                         <CheckBox Grid.Column="4" HorizontalAlignment="Center" IsChecked="{Binding SelectedForExport}" Margin="5">
                                             <Behaviors:Interaction.Triggers>
                                                 <Behaviors:EventTrigger EventName="Checked">
@@ -98,7 +98,7 @@
                 </Grid>
 
                 
-                <Button Content="Export CT Data" FontWeight="Bold" Width="170" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,9,0,0" Command="{Binding ExportCTCommand}"></Button>
+                <Button Content="Exportar CT" FontWeight="Bold" Width="170" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,9,0,0" Command="{Binding ExportCTCommand}"></Button>
             </StackPanel>
         </Border>
     </Grid>

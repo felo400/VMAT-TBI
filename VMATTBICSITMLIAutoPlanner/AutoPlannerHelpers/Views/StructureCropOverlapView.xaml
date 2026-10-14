@@ -11,13 +11,13 @@
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel HorizontalAlignment="Center" MinWidth="500">
                 <Grid Margin="5">
-                    <Label Content="Crop/Contour Overlap With Targets" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"></Label>
+                    <Label Content="Recortar/contornear solapamiento con targets" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"></Label>
                     <Button Content="?" Width="20" Height="24" HorizontalAlignment="Right"/>
                 </Grid>
                 <Grid Margin="5,5,5,10">
-                    <Button Content="Add OAR" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddCropOverlapStructureCommand}"/>
-                    <Button Content="Add Defaults" Width="100" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding AddDefaultCropOverlapStructuresCommand}"/>
-                    <Button Content="Clear List" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding ClearCropOverlapStructureListCommand}"/>
+                    <Button Content="Agregar OAR" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddCropOverlapStructureCommand}"/>
+                    <Button Content="Agregar predeterminados" Width="100" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding AddDefaultCropOverlapStructuresCommand}"/>
+                    <Button Content="Borrar lista" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding ClearCropOverlapStructureListCommand}"/>
                 </Grid>
                 <Grid HorizontalAlignment="Center" IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
@@ -44,7 +44,7 @@
                         </Grid.Resources>
 
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Structure Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id estructura"/>
                         </Border>
 
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
@@ -61,7 +61,7 @@
                                             <ColumnDefinition Width="*"   SharedSizeGroup="col1"/>
                                         </Grid.ColumnDefinitions>
                                         <ComboBox Grid.Column="0" MinWidth="120" HorizontalContentAlignment="Center" ItemsSource="{Binding Path=DataContext.StructureIdsPostUnion, ElementName=CropOverlapStructuresSP}" SelectedItem="{Binding .}" Margin="15,2,15,2"/>
-                                        <Button Content="Clear" Grid.Column="1" Command="{Binding Path=DataContext.RemoveCropOverlapStructureCommand, ElementName=CropOverlapStructuresSP}" CommandParameter="{Binding}" MinWidth="90" Margin="15,2,15,2"/>
+                                        <Button Content="Borrar" Grid.Column="1" Command="{Binding Path=DataContext.RemoveCropOverlapStructureCommand, ElementName=CropOverlapStructuresSP}" CommandParameter="{Binding}" MinWidth="90" Margin="15,2,15,2"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

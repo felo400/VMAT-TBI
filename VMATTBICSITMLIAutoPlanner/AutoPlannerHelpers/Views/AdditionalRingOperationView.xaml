@@ -7,7 +7,7 @@
         xmlns:enum="clr-namespace:AutoPlannerHelpers.Enums"
         xmlns:Behaviors="clr-namespace:Microsoft.Xaml.Behaviors;assembly=Microsoft.Xaml.Behaviors"
         mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+        WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC">
     <Window.Resources>
         <local:TupleConverter x:Key="TupleConverter" />
     </Window.Resources>
@@ -19,8 +19,8 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Label Grid.Column="0" FontSize="14" Content="Additional Structure Operation for Ring:" HorizontalAlignment="Right"></Label>
-                    <TextBox Text="{Binding RingId}" Background="DarkGray"  Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Center" MinHeight="20" MinWidth="100" IsReadOnly="True"/>
+                    <Label Grid.Column="0" FontSize="14" Content="Operación adicional para el anillo:" HorizontalAlignment="Right"></Label>
+                    <TextBox Text="{Binding RingId}" Background="#B3E5FC"  Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Center" MinHeight="20" MinWidth="100" IsReadOnly="True"/>
                 </Grid>
                 <Grid IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
@@ -53,7 +53,7 @@
 
                         <!-- Column 0: Structure A -->
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Structure A"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Estructura A"/>
                         </Border>
 
                         <!-- Column 1: (no header) -->
@@ -63,12 +63,12 @@
 
                         <!-- Column 2: Operation -->
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Operation"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Operación"/>
                         </Border>
 
                         <!-- Column 3: Structure B -->
                         <Border Grid.Column="3" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Structure B"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Estructura B"/>
                         </Border>
 
                         <!-- Column 4: (no header) -->
@@ -78,12 +78,12 @@
 
                         <!-- Column 5: Output Structure -->
                         <Border Grid.Column="5" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Output Structure"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Estructura resultante"/>
                         </Border>
 
                         <!-- Column 6: Is Temporary -->
                         <Border Grid.Column="6" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Temp?"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="¿Temp?"/>
                         </Border>
 
                         <!-- Column 7: (no header / flexible filler) -->
@@ -103,8 +103,8 @@
                             <ColumnDefinition Width="Auto" SharedSizeGroup="col6"/>
                             <ColumnDefinition Width="*"   SharedSizeGroup="col7"/>
                         </Grid.ColumnDefinitions>
-                        <TextBox Grid.Column="0" Background="DarkGray" HorizontalContentAlignment="Center" Text="{Binding StructureA}" IsReadOnly="True" MinWidth="100" Margin="1"/>
-                        <Button Grid.Column="1" Content="Margin A" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}" ToolTip="{Binding MarginA.AxisAlignedMargins}" MinWidth="70" Margin="1">
+                        <TextBox Grid.Column="0" Background="#B3E5FC" HorizontalContentAlignment="Center" Text="{Binding StructureA}" IsReadOnly="True" MinWidth="100" Margin="1"/>
+                        <Button Grid.Column="1" Content="Margen A" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}" ToolTip="{Binding MarginA.AxisAlignedMargins}" MinWidth="70" Margin="1">
                             <Button.CommandParameter>
                                 <MultiBinding Converter="{StaticResource TupleConverter}">
                                     <Binding Path="StructureA" />
@@ -114,7 +114,7 @@
                         </Button>
                         <ComboBox Grid.Column="2" MinWidth="120"  HorizontalContentAlignment="Center" SelectedItem="{Binding Operation}" ItemsSource="{Binding Source={local:EnumBindingSource {x:Type enum:StructureDerivationOperation}}}" Margin="1"/>
                         <ComboBox Grid.Column="3" MinWidth="120"  HorizontalContentAlignment="Center" ItemsSource="{Binding Path=DataContext.StructureIds, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding StructureB}" Margin="1"/>
-                        <Button Grid.Column="4" Content="Margin B" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}" ToolTip="{Binding MarginB.AxisAlignedMargins}" MinWidth="70"  Margin="1">
+                        <Button Grid.Column="4" Content="Margen B" HorizontalContentAlignment="Center" Command="{Binding DataContext.ModifyMarginCommand, RelativeSource={RelativeSource AncestorType=Window}, Mode=TwoWay}" ToolTip="{Binding MarginB.AxisAlignedMargins}" MinWidth="70"  Margin="1">
                             <Button.CommandParameter>
                                 <MultiBinding Converter="{StaticResource TupleConverter}">
                                     <Binding Path="StructureB" />
@@ -122,12 +122,12 @@
                                 </MultiBinding>
                             </Button.CommandParameter>
                         </Button>
-                        <TextBox Background="DarkGray" Grid.Column="5" MinWidth="120" HorizontalContentAlignment="Center" Text="{Binding OutputStructure}" IsReadOnly="True" Margin="1"/>
+                        <TextBox Background="#B3E5FC" Grid.Column="5" MinWidth="120" HorizontalContentAlignment="Center" Text="{Binding OutputStructure}" IsReadOnly="True" Margin="1"/>
                         <CheckBox IsChecked="{Binding IsTemporary}" Grid.Column="6" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,0"/>
                     </Grid>
                 </Grid>
                 
-                <Button Content="Set Structure Operation" FontWeight="Bold" Width="180" HorizontalAlignment="Center" Margin="5,10,5,5" Command="{Binding SetAdditionalRingOperationCommand}"/>
+                <Button Content="Fijar operación" FontWeight="Bold" Width="180" HorizontalAlignment="Center" Margin="5,10,5,5" Command="{Binding SetAdditionalRingOperationCommand}"/>
             </StackPanel>
         </Border> 
     </Grid>

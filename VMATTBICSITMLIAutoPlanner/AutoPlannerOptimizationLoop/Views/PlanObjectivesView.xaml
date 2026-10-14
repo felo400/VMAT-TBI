@@ -11,7 +11,7 @@
             <Setter Property="Background" Value="White"/>
         </Style>
         <Style TargetType="Button">
-            <Setter Property="Background" Value="LightGray"/>
+            <Setter Property="Background" Value="#FFE082"/>
         </Style>
         <Style TargetType="CheckBox">
             <Setter Property="Background" Value="White"/>
@@ -124,13 +124,13 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#FFE082"/>
                                 <Setter Property="Foreground" Value="Black"/>
                                 <Setter Property="TextElement.FontWeight" TargetName="ContentSite" Value="Bold"/>
                             </Trigger>
 
                             <Trigger Property="IsSelected" Value="false">
-                                <Setter Property="Background" Value="LightGray"/>
+                                <Setter Property="Background" Value="#FFE082"/>
                                 <Setter Property="Foreground" Value="Black"/>
 
                             </Trigger>
@@ -143,10 +143,10 @@
     <Grid>
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel Name="OBJ" Width="600" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0">
-                <Label Content="Plan Objectives" FontSize="16" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top"></Label>
+                <Label Content="Objetivos del plan" FontSize="16" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top"></Label>
                 <Grid Height="25" Width ="520" HorizontalAlignment="Center" Margin="0,5,0,5">
-                    <Button Command="{Binding AddPlanObjectiveCommand}" Content="Add Objective" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                    <Button Command="{Binding ClearPlanObjectiveListCommand}" Content="Clear List" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" />
+                    <Button Command="{Binding AddPlanObjectiveCommand}" Content="Agregar objetivo" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" />
+                    <Button Command="{Binding ClearPlanObjectiveListCommand}" Content="Borrar lista" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" />
                 </Grid>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -157,11 +157,11 @@
                         <ColumnDefinition Width="0.8*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <Label Content="Structure Id" Grid.Column="0" HorizontalAlignment="Center"/>
-                    <Label Content="Objective Type" Grid.Column="1" HorizontalAlignment="Center"/>
-                    <Label Content="Volume (%)" Grid.Column="2" HorizontalAlignment="Center"/>
-                    <Label Content="Dose" Grid.Column="3" HorizontalAlignment="Center"/>
-                    <Label Content="Units" Grid.Column="4" HorizontalAlignment="Center"/>
+                    <Label Content="Id estructura" Grid.Column="0" HorizontalAlignment="Center"/>
+                    <Label Content="Tipo de objetivo" Grid.Column="1" HorizontalAlignment="Center"/>
+                    <Label Content="Volumen (%)" Grid.Column="2" HorizontalAlignment="Center"/>
+                    <Label Content="Dosis" Grid.Column="3" HorizontalAlignment="Center"/>
+                    <Label Content="Unidades" Grid.Column="4" HorizontalAlignment="Center"/>
                 </Grid>
                 <ScrollViewer Height="464" Width="595" Margin="10,10,5,0" HorizontalAlignment="Center" VerticalAlignment="Bottom" Style="{StaticResource ScrollViewerStyle}">
                     <ItemsControl x:Name="PlanObjectiveSP" ItemsSource="{Binding PlanObjectives}">
@@ -181,7 +181,7 @@
                                     <TextBox Grid.Column="2" HorizontalContentAlignment="Center" Text="{Binding QueryVolume}" Margin="1"/>
                                     <TextBox Grid.Column="3" HorizontalContentAlignment="Center" Text="{Binding QueryDose}" Margin="1"/>
                                     <ComboBox Grid.Column="4" HorizontalContentAlignment="Center" SelectedItem="{Binding QueryDoseUnits}" ItemsSource="{Binding Source={local:EnumBindingSource {x:Type enum:Units}}}" Margin="1"/>
-                                    <Button Content="Clear" Grid.Column="5" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=PlanObjectiveSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
+                                    <Button Content="Borrar" Grid.Column="5" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=PlanObjectiveSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>

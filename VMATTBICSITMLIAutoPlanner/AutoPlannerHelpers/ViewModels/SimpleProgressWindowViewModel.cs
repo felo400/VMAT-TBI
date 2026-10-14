@@ -69,7 +69,7 @@ namespace AutoPlannerHelpers.ViewModels
 
         public SimpleProgressWindowViewModel()
         {
-            TaskProgressBackground = Brushes.ForestGreen;
+            TaskProgressBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
         }
 
         public void DoStuff(ESAPIWorker slave)
@@ -193,7 +193,7 @@ namespace AutoPlannerHelpers.ViewModels
             TaskProgressBackground = Brushes.Red;
             sw.Stop();
             _timer.Stop();
-            UpdateUILabel("Failed");
+            UpdateUILabel("FALLÓ");
         }
         #endregion
 

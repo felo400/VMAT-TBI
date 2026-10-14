@@ -88,6 +88,7 @@
     <Compile Include="Helpers\CTImageExport.cs" />
     <Compile Include="Helpers\CTExportCheckHelper.cs" />
     <Compile Include="Helpers\CultureHelper.cs" />
+    <Compile Include="Helpers\PrescriptionHelper.cs" />
     <Compile Include="Helpers\DocumentationHelper.cs" />
     <Compile Include="Helpers\ESAPIWorker.cs" />
     <Compile Include="Helpers\ImportListenerHelper.cs" />
@@ -148,6 +149,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Settings\AutoPlannerHelperSettings.cs" />
     <Compile Include="UIHelpers\ConfigurationUIHelper.cs" />
+    <Compile Include="UIHelpers\ThemeBrushes.cs" />
     <Compile Include="ViewModels\AdditionalRingOperationViewModel.cs" />
     <Compile Include="ViewModels\BeamPlacementViewModel.cs" />
     <Compile Include="ViewModels\CTExportViewModel.cs" />

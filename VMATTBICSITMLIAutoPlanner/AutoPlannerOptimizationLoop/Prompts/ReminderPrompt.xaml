@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerOptimizationLoop.Prompts"
         mc:Ignorable="d"
-                Title="ReminderPrompt" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray" Closing="Window_Closing">
+                Title="Recordatorio" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC" Closing="Window_Closing">
     <Window.Resources>
         <!--Scrollbar Thumbs-->
         <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
@@ -108,7 +108,7 @@
 
                 </StackPanel>
             </ScrollViewer>
-            <Button Content="Confirm" Margin="5" Width="80" Click="ConfirmClick"></Button>
+            <Button Content="Confirmar" Margin="5" Width="80" Click="ConfirmClick"></Button>
         </StackPanel>
     </Grid>
 </Window>

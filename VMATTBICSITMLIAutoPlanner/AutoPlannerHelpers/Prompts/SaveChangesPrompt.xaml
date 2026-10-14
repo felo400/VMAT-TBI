@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerHelpers.Prompts"
         mc:Ignorable="d"
-        Title="Save?" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+        Title="¿Guardar?" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC">
     <Grid>
         <Grid>
             <Grid.ColumnDefinitions>
@@ -16,8 +16,8 @@
                 <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Label Content="Save changes to database?" FontWeight="Bold" FontSize="14" Grid.ColumnSpan="2" Grid.Row="0" Width="220" HorizontalAlignment="Center" HorizontalContentAlignment="Center" Margin="10"/>
-            <Button Grid.Column="0" Grid.Row="1" Width="100" Content="Yes" Margin="10" FontWeight="Bold" Click="Button1_Click" IsTabStop="True"/>
+            <Label Content="¿Guardar cambios en la base de datos?" FontWeight="Bold" FontSize="14" Grid.ColumnSpan="2" Grid.Row="0" Width="220" HorizontalAlignment="Center" HorizontalContentAlignment="Center" Margin="10"/>
+            <Button Grid.Column="0" Grid.Row="1" Width="100" Content="Sí" Margin="10" FontWeight="Bold" Click="Button1_Click" IsTabStop="True"/>
             <Button Grid.Column="1" Grid.Row="1" Width="100" Content="No" Margin="10" IsTabStop="True" IsDefault="True" Click="Button2_Click"/>
         </Grid>
     </Grid>

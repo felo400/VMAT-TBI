@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerHelpers.Prompts"
         mc:Ignorable="d"
-        Title="Confirm?" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+        Title="¿Confirmar?" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC">
     <Grid>
         <StackPanel>
             <Grid Height="Auto">
@@ -18,8 +18,8 @@
                             <ColumnDefinition Width="*"></ColumnDefinition>
                             <ColumnDefinition Width="*"></ColumnDefinition>
                         </Grid.ColumnDefinitions>
-                        <Button x:Name="Button1" Grid.Column="0" Width="120" Content="Confirm" Margin="10" FontWeight="Bold" Click="Button1_Click"/>
-                        <Button x:Name="Button2" Grid.Column="1" Width="120" Content="Cancel" Margin="10" IsTabStop="True" IsDefault="True" Click="Button2_Click"/>
+                        <Button x:Name="Button1" Grid.Column="0" Width="120" Content="Confirmar" Margin="10" FontWeight="Bold" Click="Button1_Click"/>
+                        <Button x:Name="Button2" Grid.Column="1" Width="120" Content="Cancelar" Margin="10" IsTabStop="True" IsDefault="True" Click="Button2_Click"/>
                     </Grid>
                 </StackPanel>
             </Grid>

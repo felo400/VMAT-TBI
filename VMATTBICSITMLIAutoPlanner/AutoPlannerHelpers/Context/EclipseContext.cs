@@ -35,6 +35,8 @@ namespace AutoPlannerHelpers.Context
         public string ImageFOR { get; set; } = "";
         public string UserName { get; set; } = "";
         public string UserId { get; set; } = "";
+        /// <summary>prescription read from Eclipse (null if none found)</summary>
+        public AutoPlannerHelpers.Helpers.EclipsePrescriptionModel Prescription { get; set; } = null;
 
         public void ClearContext(bool closePatient = true)
         {

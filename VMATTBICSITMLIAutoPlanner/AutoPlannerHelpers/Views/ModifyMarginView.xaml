@@ -7,18 +7,18 @@
         xmlns:enum="clr-namespace:AutoPlannerHelpers.Enums"
         xmlns:Behaviors="clr-namespace:Microsoft.Xaml.Behaviors;assembly=Microsoft.Xaml.Behaviors"
         mc:Ignorable="d"
-        WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+        WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC">
     <Grid>
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel HorizontalAlignment="Center" Margin="0">
-                <Label Content="Adjust structure operation margin" FontSize="20" FontStyle="Normal" FontWeight="SemiBold" HorizontalContentAlignment="Center" Margin="5"></Label>
+                <Label Content="Ajustar margen de la operación" FontSize="20" FontStyle="Normal" FontWeight="SemiBold" HorizontalContentAlignment="Center" Margin="5"></Label>
                 <Grid HorizontalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Label Content="Structure:" Grid.Column="0" HorizontalAlignment="Right"/>
-                    <Label Content="{Binding StructureId, FallbackValue=None}" Grid.Column="1" Background="DarkGray" HorizontalContentAlignment="Center" MinWidth="120"/>
+                    <Label Content="Estructura:" Grid.Column="0" HorizontalAlignment="Right"/>
+                    <Label Content="{Binding StructureId, FallbackValue=None}" Grid.Column="1" Background="#B3E5FC" HorizontalContentAlignment="Center" MinWidth="120"/>
                 </Grid>
                 <Grid DataContext="{Binding StructureMargin}" IsSharedSizeScope="True" Margin="5">
                     <Grid.RowDefinitions>
@@ -51,11 +51,11 @@
 
                     <!-- Column 0: Structure A -->
                     <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Margin Type"/>
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Tipo de margen"/>
                     </Border>
 
                     <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource HeaderBorderStyle}">
-                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Geometry Type"/>
+                        <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Tipo de geometría"/>
                     </Border>
 
                     <Border Grid.Row="0" Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
@@ -96,7 +96,7 @@
                     <TextBox Grid.Row="1" Grid.Column="5" HorizontalContentAlignment="Center" Text="{Binding x2}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
                     <TextBox Grid.Row="1" Grid.Column="6" HorizontalContentAlignment="Center" Text="{Binding y2}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
                     <TextBox Grid.Row="1" Grid.Column="7" HorizontalContentAlignment="Center" Text="{Binding z2}" MinWidth="70" Margin="2" Visibility="{Binding DataContext.AsymItemsVisible, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                    <Button Grid.Row="2" Grid.ColumnSpan="8" Content="Set Margin" FontWeight="Bold" MinWidth="120" HorizontalAlignment="Center" Margin="5" Command="{Binding Path=DataContext.SetMarginCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                    <Button Grid.Row="2" Grid.ColumnSpan="8" Content="Fijar margen" FontWeight="Bold" MinWidth="120" HorizontalAlignment="Center" Margin="5" Command="{Binding Path=DataContext.SetMarginCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
                 </Grid>
             </StackPanel>
         </Border> 

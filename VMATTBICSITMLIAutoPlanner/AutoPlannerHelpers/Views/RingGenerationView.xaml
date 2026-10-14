@@ -10,11 +10,11 @@
     <Grid>
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel HorizontalAlignment="Center" Margin="0">
-                <Label Content="Create Ring Structures" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"></Label>
+                <Label Content="Crear anillos" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0"></Label>
                 <Grid Height="25" MinWidth ="560" HorizontalAlignment="Stretch" Margin="20,5,20,15">
-                    <Button Content="Add Ring" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddRingCommand}"/>
-                    <Button Content="Add Defaults" Width="100" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding AddDefaultRingsCommand}"/>
-                    <Button Content="Clear List" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding ClearRingListCommand}"/>
+                    <Button Content="Agregar anillo" Width="100" HorizontalAlignment="Left" VerticalAlignment="Top" Command="{Binding AddRingCommand}"/>
+                    <Button Content="Agregar predeterminados" Width="100" HorizontalAlignment="Center" VerticalAlignment="Top" Command="{Binding AddDefaultRingsCommand}"/>
+                    <Button Content="Borrar lista" Width="100" HorizontalAlignment="Right" VerticalAlignment="Top" Command="{Binding ClearRingListCommand}"/>
                 </Grid>
                 <Grid IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
@@ -45,19 +45,19 @@
                         </Grid.Resources>
 
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Target Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id target"/>
                         </Border>
 
                         <Border Grid.Column="1" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Margin (cm)"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Margen (cm)"/>
                         </Border>
 
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Thickness (cm)"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Grosor (cm)"/>
                         </Border>
 
                         <Border Grid.Column="3" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Dose (cGy)"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Dosis (cGy)"/>
                         </Border>
 
                         <Border Grid.Column="4" Style="{StaticResource HeaderBorderStyle}">
@@ -87,8 +87,8 @@
                                         <TextBox Grid.Column="1" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding MarginFromTargetInCM}" MinWidth="90" Margin="1"/>
                                         <TextBox Grid.Column="2" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding RingThicknessInCM}" MinWidth="90" Margin="1"/>
                                         <TextBox Grid.Column="3" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="{Binding DoseLevel}" MinWidth="90" Margin="1"/>
-                                        <Button Content="Additional Operation" MinWidth="120" Grid.Column="4" ToolTip="{Binding AdditionalStructureOperation.FriendlyName}" Command="{Binding Path=DataContext.SpecifyAdditionalOperationCommand, ElementName=RingStructuresSP}" CommandParameter="{Binding}" Margin="1"/>
-                                        <Button Content="Clear" Grid.Column="5" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=RingStructuresSP}" CommandParameter="{Binding}" Width="75" Margin="1"/>
+                                        <Button Content="Operación adicional" MinWidth="120" Grid.Column="4" ToolTip="{Binding AdditionalStructureOperation.FriendlyName}" Command="{Binding Path=DataContext.SpecifyAdditionalOperationCommand, ElementName=RingStructuresSP}" CommandParameter="{Binding}" Margin="1"/>
+                                        <Button Content="Borrar" Grid.Column="5" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=RingStructuresSP}" CommandParameter="{Binding}" Width="75" Margin="1"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

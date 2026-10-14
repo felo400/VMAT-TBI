@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AutoPlannerHelpers.Prompts"
         mc:Ignorable="d"
-        Title="Select Item" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="DarkGray">
+        Title="Seleccionar" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#B3E5FC">
     <Grid>
         <StackPanel>
             <Grid>
@@ -22,8 +22,8 @@
                     <TextBlock x:Name="informationTB" Text="hello" Foreground="Black" FontWeight="Bold" TextWrapping="Wrap" Padding="3,0,0,0"/>
                 </Border>
                 <ComboBox x:Name="requestedItemCB" Grid.ColumnSpan="2" Grid.Row="1" Width="160" HorizontalContentAlignment="Center" SelectionChanged="requestedItemCB_SelectionChanged"/>
-                <Button x:Name="Button1" Grid.Column="0" Grid.Row="2" Width="120" Content="Confirm" Margin="10" FontWeight="Bold" Click="Button1_Click"/>
-                <Button x:Name="Button2" Grid.Column="1" Grid.Row="2" Width="120" Content="Cancel" Margin="10" IsTabStop="True" IsDefault="True" Click="Button2_Click"/>
+                <Button x:Name="Button1" Grid.Column="0" Grid.Row="2" Width="120" Content="Confirmar" Margin="10" FontWeight="Bold" Click="Button1_Click"/>
+                <Button x:Name="Button2" Grid.Column="1" Grid.Row="2" Width="120" Content="Cancelar" Margin="10" IsTabStop="True" IsDefault="True" Click="Button2_Click"/>
             </Grid>
         </StackPanel>
     </Grid>

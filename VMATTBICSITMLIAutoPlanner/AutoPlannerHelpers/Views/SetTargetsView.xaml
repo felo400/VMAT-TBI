@@ -11,11 +11,11 @@
     <Grid>
         <Border Margin="0" BorderThickness="1,0,0,0" BorderBrush="Black">
             <StackPanel HorizontalAlignment="Center" Margin="0">
-                <Label Content="Select Targets" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                <Label Content="Seleccionar targets" FontSize="20" FontStyle="Normal" HorizontalAlignment="Center" VerticalAlignment="Top"/>
                 <Grid Height="25" MinWidth ="300" HorizontalAlignment="Stretch" Margin="20,5,20,10">
-                    <Button Content="Add Target" Width="100" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Left" Command="{Binding AddTargetCommand}"/>
-                    <Button Content="Add Defaults" Width="120" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Center" Command="{Binding AddDefaultTargetsCommand}"/>
-                    <Button Content="Clear List" Width="100" Grid.Column="3"  VerticalAlignment="Top" HorizontalAlignment="Right" Command="{Binding RemoveAllTargetsCommand}"/>
+                    <Button Content="Agregar target" Width="100" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Left" Command="{Binding AddTargetCommand}"/>
+                    <Button Content="Agregar predeterminados" Width="120" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Center" Command="{Binding AddDefaultTargetsCommand}"/>
+                    <Button Content="Borrar lista" Width="100" Grid.Column="3"  VerticalAlignment="Top" HorizontalAlignment="Right" Command="{Binding RemoveAllTargetsCommand}"/>
                 </Grid>
                 <Grid IsSharedSizeScope="True">
                     <Grid.RowDefinitions>
@@ -44,15 +44,15 @@
 
                         <!-- Column 0: Structure A -->
                         <Border Grid.Column="0" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Target Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id target"/>
                         </Border>
 
                         <Border Grid.Column="1" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Rx Dose"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Dosis Rx"/>
                         </Border>
 
                         <Border Grid.Column="2" Style="{StaticResource HeaderBorderStyle}">
-                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Plan Id"/>
+                            <TextBlock Style="{StaticResource HeaderTextStyle}" Text="Id plan"/>
                         </Border>
 
                         <Border Grid.Column="3" Style="{StaticResource HeaderBorderStyle}">
@@ -85,7 +85,7 @@
                                                 </Behaviors:EventTrigger>
                                             </Behaviors:Interaction.Triggers>
                                         </ComboBox>
-                                        <Button Content="Clear" MinWidth="50" Grid.Column="3" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=TargetsSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
+                                        <Button Content="Borrar" MinWidth="50" Grid.Column="3" Command="{Binding Path=DataContext.ClearRowCommand, ElementName=TargetsSP}" CommandParameter="{Binding}" Width="90" Margin="1"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -93,7 +93,7 @@
                     </ScrollViewer>
                 </Grid>
                 
-                <Button Content="Set Targets" FontWeight="Bold" Width="150" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="5" Command="{Binding SetTargetsCommand}"></Button>
+                <Button Content="Asignar targets" FontWeight="Bold" Width="150" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="5" Command="{Binding SetTargetsCommand}"></Button>
             </StackPanel>
         </Border>
     </Grid>
