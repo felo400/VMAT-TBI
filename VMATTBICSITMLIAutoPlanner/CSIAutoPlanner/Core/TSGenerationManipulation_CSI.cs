@@ -734,15 +734,20 @@ namespace CSIAutoPlanner.Core
             ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Verified approval status of {ptvBrain.Id} and {ptvSpine.Id}");
 
             int cutSlice = -1;
-            (bool fail, double cutPos) = GetCutSliceZPosition();
+            Structure csiInitTarget = StructureTuningHelper.GetStructureFromId(TargetsHelper.GetHighestRxTargetIdForPlan(_prescriptions, _prescriptions.First().PlanId));
+            if (csiInitTarget == null || csiInitTarget.IsEmpty)
+            {
+                ProvideUIUpdate("Error: el target del plan inicial no existe o esta vacio. Revise 'Definir targets'.", true);
+                return true;
+            }
+            ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Retrieved structure: {csiInitTarget.Id}");
+
+            (bool fail, double cutPos) = GetCutSliceZPosition(csiInitTarget);
             if (fail) return true;
             ProvideUIUpdate(100 * ++percentComplete / calcItems);
 
             cutSlice = CalculationHelper.ComputeSlice(cutPos, EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes);
             ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Z cut slice: {cutSlice}");
-
-            Structure csiInitTarget = StructureTuningHelper.GetStructureFromId(TargetsHelper.GetHighestRxTargetIdForPlan(_prescriptions, _prescriptions.First().PlanId));
-            ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Retrieved structure: {csiInitTarget.Id}");
 
             //stop slice for ptv spine is the cut plane
             ContourStructure(ptvSpine, csiInitTarget, CalculationHelper.ComputeSlice(csiInitTarget.MeshGeometry.Positions.Min(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes), cutSlice);
@@ -751,6 +756,12 @@ namespace CSIAutoPlanner.Core
             //start slice for ptv brain is the cut plane
             ContourStructure(ptvBrain, csiInitTarget, cutSlice, CalculationHelper.ComputeSlice(csiInitTarget.MeshGeometry.Positions.Max(p => p.Z), EclipseContext.GetInstance().StructureSet.Image.Origin.z, EclipseContext.GetInstance().StructureSet.Image.ZRes));
             ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Contoured structure: {ptvBrain.Id}");
+            if (ptvBrain.IsEmpty || ptvSpine.IsEmpty)
+            {
+                ProvideUIUpdate($"Error: despues de dividir {csiInitTarget.Id} en el corte Z={cutPos:0.0} mm, {(ptvBrain.IsEmpty ? "_Brain" : "_Spine")} quedo vacio.", true);
+                return true;
+            }
+            ProvideUIUpdate($"_Brain: Z {ptvBrain.MeshGeometry.Bounds.Z:0.0} a {ptvBrain.MeshGeometry.Bounds.Z + ptvBrain.MeshGeometry.Bounds.SizeZ:0.0} mm; _Spine: Z {ptvSpine.MeshGeometry.Bounds.Z:0.0} a {ptvSpine.MeshGeometry.Bounds.Z + ptvSpine.MeshGeometry.Bounds.SizeZ:0.0} mm");
             return false;
         }
 
@@ -759,30 +770,35 @@ namespace CSIAutoPlanner.Core
         /// and _Spine. Either min z of brain or max z of spinal cord will work
         /// </summary>
         /// <returns></returns>
-        private (bool, double) GetCutSliceZPosition()
+        private (bool, double) GetCutSliceZPosition(Structure target)
         {
-            Structure cutStructure = StructureTuningHelper.GetStructureFromId("brain");
-            double cutPos = 0.0;
-            if (cutStructure == null || cutStructure.IsEmpty)
+            //Plano de corte entre la parte cerebral (_Brain) y la espinal (_Spine) del PTV craneoespinal.
+            //Orden de preferencia: borde inferior del cerebro -> borde inferior del tallo cerebral -> borde superior de la medula.
+            //Siempre se valida que el corte deje al menos 8 cm de target arriba (cerebro) y 5 cm abajo (columna).
+            double tMin = target.MeshGeometry.Positions.Min(p => p.Z);
+            double tMax = target.MeshGeometry.Positions.Max(p => p.Z);
+            ProvideUIUpdate($"Extension Z de {target.Id}: {tMin:0.0} a {tMax:0.0} mm");
+            Func<double, bool> valid = z => z > tMin + 50.0 && z < tMax - 80.0;
+            List<(string label, double z)> options = new List<(string, double)>();
+            Structure brain = StructureTuningHelper.FindStructureWithAlias("brain", true);
+            if (brain != null) options.Add(($"borde inferior de {brain.Id}", brain.MeshGeometry.Positions.Min(p => p.Z)));
+            Structure brainstem = StructureTuningHelper.FindStructureWithAlias("brainstem", true);
+            if (brainstem != null) options.Add(($"borde inferior de {brainstem.Id}", brainstem.MeshGeometry.Positions.Min(p => p.Z)));
+            Structure cord = StructureTuningHelper.FindStructureWithAlias("spinalcord", true);
+            if (cord != null) options.Add(($"borde superior de {cord.Id}", cord.MeshGeometry.Positions.Max(p => p.Z)));
+            foreach (var o in options)
             {
-                cutStructure = StructureTuningHelper.GetStructureFromId("spinal_cord");
-                if (cutStructure == null) cutStructure = StructureTuningHelper.GetStructureFromId("spinalcord");
-                if (cutStructure == null || cutStructure.IsEmpty)
+                if (valid(o.z))
                 {
-                    //give up
-                    ProvideUIUpdate($"Error! Brain/Spinal cord structures are null or empty! Fix and try again!", true);
-                    return (true, 0.0);
+                    ProvideUIUpdate($"Plano de corte cerebro/columna: {o.label} = {o.z:0.0} mm");
+                    return (false, o.z);
                 }
-                else cutPos = cutStructure.MeshGeometry.Positions.Max(p => p.Z);
+                ProvideUIUpdate($"Descartado como corte: {o.label} = {o.z:0.0} mm (fuera del rango util del target)");
             }
-            else cutPos = cutStructure.MeshGeometry.Positions.Min(p => p.Z);
-            ProvideUIUpdate($"Retrieved structure used to determine cut plan: {cutStructure.Id}");
-            VVector origin = EclipseContext.GetInstance().StructureSet.Image.Origin;
-            ProvideUIUpdate($"Dicom origin ({origin.x:0.0}, {origin.y:0.0}, {origin.z:0.0}) mm");
-            ProvideUIUpdate($"Image z resolution: {EclipseContext.GetInstance().StructureSet.Image.ZRes:0.0} mm");
-            ProvideUIUpdate($"Number of z slices: {EclipseContext.GetInstance().StructureSet.Image.ZSize}");
-            ProvideUIUpdate($"Z cut position: {cutPos:0.0} mm");
-            return (false, cutPos);
+            //respaldo: 18 cm por debajo del vertex del target (altura tipica cerebro + margen)
+            double fallback = Math.Max(tMin + 50.0, tMax - 180.0);
+            ProvideUIUpdate($"Aviso: sin estructura de referencia valida. Corte cerebro/columna a 18 cm del vertex: {fallback:0.0} mm. Revise _Brain/_Spine.");
+            return (false, fallback);
         }
 
         /// <summary>
