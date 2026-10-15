@@ -31,26 +31,16 @@ namespace AutoPlannerHelpers.BaseCore
         /// <returns></returns>
         protected bool CheckBeamNameFormatting(ExternalPlanSetup plan)
         {
-            StringBuilder sb = new StringBuilder();
-            bool beamFormatError = false;
-            int percentComplete = 0;
-            int calcItems = plan.Beams.Count(x => !x.IsSetupField);
-            foreach (Beam b in plan.Beams.Where(x => !x.IsSetupField))
+            //Convencion de Stanford: Id del campo empieza con numero + espacio ("1 Brain CCW"). La separacion de planes NO depende
+            //de esto (los campos se identifican por Id completo), asi que solo se informa y nunca se detiene el proceso.
+            List<string> nonStandard = plan.Beams.Where(x => !x.IsSetupField).Select(x => x.Id)
+                                           .Where(id => id.Length < 2 || !int.TryParse(id.Substring(0, 2), out int dummy)).ToList();
+            if (nonStandard.Any())
             {
-                if (b.Id.Length < 2 || !int.TryParse(b.Id.Substring(0, 2).ToString(), out int dummy))
-                {
-                    sb.AppendLine(b.Id);
-                    beamFormatError = true;
-                }
-                ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Beam {b.Id} formatting ok");
+                ProvideUIUpdate($"Aviso: {nonStandard.Count} campo(s) no siguen la convencion 'numero + espacio' ({string.Join(", ", nonStandard)}). No afecta la separacion; se continua.");
             }
-            if (beamFormatError)
-            {
-                ProvideUIUpdate("The following beams are not in the correct format:");
-                ProvideUIUpdate(sb.ToString());
-                ProvideUIUpdate("Make sure there is a space after the beam number! Please fix and try again!", true);
-            }
-            return beamFormatError;
+            else ProvideUIUpdate(100, "Nombres de campos OK");
+            return false;
         }
 
         /// <summary>
@@ -92,8 +82,9 @@ namespace AutoPlannerHelpers.BaseCore
             {
                 //copy the plan, set the plan id based on the counter, and make a empty list to hold the beams that need to be removed
                 ExternalPlanSetup newplan = (ExternalPlanSetup)plan.Course.CopyPlanSetup(plan);
-                string desiredId = isAPPA ? $"{count + 1} {(names.ElementAt(count).IsocenterId.Contains("upper") ? "Upper Legs" : "Lower Legs")}"
-                                          : $"{count + 1} {names.ElementAt(count).IsocenterId}";
+                string isoName = (names != null && count < names.Count) ? names.ElementAt(count).IsocenterId : $"Iso{count + 1}";
+                string desiredId = isAPPA ? $"{count + 1} {(isoName.ToLower().Contains("upper") ? "Upper Legs" : "Lower Legs")}"
+                                          : $"{count + 1} {isoName}";
                 //plans with this Id may already exist (e.g. a previous separation): ESAPI can't delete them, so use a free Id
                 newplan.Id = GetUniquePlanId(plan.Course, newplan, desiredId);
                 ProvideUIUpdate(100 * ++percentComplete / calcItems, $"Created new plan {newplan.Id} as copy of {plan.Id}");
