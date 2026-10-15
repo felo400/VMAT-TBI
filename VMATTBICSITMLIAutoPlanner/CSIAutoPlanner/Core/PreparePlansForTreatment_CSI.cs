@@ -18,7 +18,7 @@ namespace CSIAutoPlanner.Core
         /// <param name="closePW"></param>
         public PreparePlansForTreatment_CSI()
         {
-            VMATPlan = EclipseContext.GetInstance().VMATPlans.First();
+            VMATPlan = PlanPrepHelper.FindPlanWithTreatmentBeams(EclipseContext.GetInstance().VMATPlans, "csi") ?? EclipseContext.GetInstance().VMATPlans.First();
             SetCloseOnFinish(CSIAutoPlannerSettings.CloseProgressWindowOnFinish, 3000);
         }
 

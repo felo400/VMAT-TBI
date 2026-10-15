@@ -143,7 +143,8 @@ namespace AutoPlannerHelpers.Helpers
             if (StructureTuningHelper.DoesStructureExistInSS("couchsurface", true))
             {
                 Structure couchSurface = StructureTuningHelper.GetStructureFromId("couchsurface");
-                TT = (vmatPlan.Beams.First(x => !x.IsSetupField).IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
+                Beam firstTx = vmatPlan.Beams.FirstOrDefault(x => !x.IsSetupField);
+                if (firstTx != null) TT = (firstTx.IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
             }
 
             sb.Append(BuildTBITMLIShiftNote(planType, TT, isoNames, shifts, numVMATIsos, numIsos, legsHFS));
@@ -226,7 +227,8 @@ namespace AutoPlannerHelpers.Helpers
             if (StructureTuningHelper.DoesStructureExistInSS("couchsurface", true))
             {
                 Structure couchSurface = StructureTuningHelper.GetStructureFromId("couchsurface");
-                TT = (vmatPlan.Beams.First(x => !x.IsSetupField).IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
+                Beam firstTx = vmatPlan.Beams.FirstOrDefault(x => !x.IsSetupField);
+                if (firstTx != null) TT = (firstTx.IsocenterPosition.y - couchSurface.MeshGeometry.Positions.Min(p => p.Y)) / 10;
             }
 
             sb.Append(BuildCSIShiftNote(TT, IsoNameHelper.GetCSIIsoNames(isoPositions.Count), shifts));
@@ -256,15 +258,16 @@ namespace AutoPlannerHelpers.Helpers
             sb.AppendLine("Dosimetric shifts SUP to INF:");
 
             int count = 0;
+            Func<int, string> isoName = i => i < isoNames.Count ? isoNames.ElementAt(i).IsocenterId : $"Iso{i + 1}";
             foreach (VVector itr in shiftsBetweenIsos)
             {
                 if (count == 0)
                 {
-                    sb.AppendLine($"{isoNames.ElementAt(count).IsocenterId} iso shift from CT REF:");
+                    sb.AppendLine($"{isoName(count)} iso shift from CT REF:");
                 }
                 else
                 {
-                    sb.AppendLine($"{isoNames.ElementAt(count).IsocenterId} shift from **{isoNames.ElementAt(count - 1).IsocenterId} ISO**");
+                    sb.AppendLine($"{isoName(count)} shift from **{isoName(count - 1)} ISO**");
                 }
                 if (!CalculationHelper.AreEqual(itr.x, 0.0)) sb.AppendLine($"X = {Math.Abs(itr.x):0.0} cm {(itr.x > 0 ? "LEFT" : "RIGHT")}");
                 if (!CalculationHelper.AreEqual(itr.y, 0.0)) sb.AppendLine($"Y = {Math.Abs(itr.y):0.0} cm {(itr.y > 0 ? "POST" : "ANT")}");
@@ -279,6 +282,25 @@ namespace AutoPlannerHelpers.Helpers
         /// </summary>
         /// <param name="plan"></param>
         /// <returns></returns>
+        /// <summary>
+        /// Devuelve el primer plan (de los candidatos, luego de su curso, luego de todo el paciente) que tenga campos de tratamiento
+        /// </summary>
+        public static ExternalPlanSetup FindPlanWithTreatmentBeams(IEnumerable<ExternalPlanSetup> candidates, string idHint)
+        {
+            List<ExternalPlanSetup> list = new List<ExternalPlanSetup>();
+            if (candidates != null) list.AddRange(candidates.Where(x => x != null));
+            foreach (ExternalPlanSetup p in list.ToList())
+            {
+                try { list.AddRange(p.Course.ExternalPlanSetups.Where(x => !list.Contains(x))); } catch { }
+            }
+            Patient pat = EclipseContext.GetInstance().Patient;
+            if (pat != null)
+            {
+                list.AddRange(pat.Courses.SelectMany(c => c.ExternalPlanSetups).Where(x => !list.Contains(x) && x.Id.ToLower().Contains((idHint ?? "").ToLower())));
+            }
+            return list.FirstOrDefault(x => x.Beams.Any(b => !b.IsSetupField));
+        }
+
         public static List<VVector> ExtractIsoPositions(ExternalPlanSetup plan)
         {
             List<VVector> isoPositions = new List<VVector> { };

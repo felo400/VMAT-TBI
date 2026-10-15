@@ -324,7 +324,15 @@ namespace CSIAutoPlanner.ViewModels
                 else return true;
             }
 
-            Clipboard.SetText(PlanPrepHelper.GetCSIShiftNote(EclipseContext.GetInstance().VMATPlans.First()).ToString());
+            ExternalPlanSetup txPlan = PlanPrepHelper.FindPlanWithTreatmentBeams(EclipseContext.GetInstance().VMATPlans, "csi");
+            if (ReferenceEquals(txPlan, null))
+            {
+                MessageBox.Show($"El plan '{EclipseContext.GetInstance().VMATPlans.First().Id}' no tiene campos de tratamiento y no encontré otro plan CSI con campos.\n\nPrimero cree los campos (pestaña 'Campos') y optimice/calcule el plan; después genere la nota de desplazamientos.", "Sin campos");
+                return true;
+            }
+            string note = PlanPrepHelper.GetCSIShiftNote(txPlan).ToString();
+            try { Clipboard.SetText(note); } catch { }
+            MessageBox.Show($"Plan: {txPlan.Id} (curso {txPlan.Course.Id})\n\n{note}\n(Copiado al portapapeles)", "Nota de desplazamientos");
             return false;
         }
 
