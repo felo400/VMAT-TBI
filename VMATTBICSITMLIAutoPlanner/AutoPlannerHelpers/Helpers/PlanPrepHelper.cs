@@ -301,6 +301,29 @@ namespace AutoPlannerHelpers.Helpers
             return list.FirstOrDefault(x => x.Beams.Any(b => !b.IsSetupField));
         }
 
+        /// <summary>
+        /// true si el plan tiene arcos VMAT (campos de tratamiento con rotacion de gantry)
+        /// </summary>
+        public static bool HasVMATArcs(ExternalPlanSetup plan)
+        {
+            try { return plan != null && plan.Beams.Any(b => !b.IsSetupField && b.GantryDirection != GantryDirection.None); }
+            catch { return false; }
+        }
+
+        /// <summary>
+        /// Lista de planes del paciente con arcos VMAT (los que crea el autoplanificador), del mas reciente al mas antiguo.
+        /// Excluye planes de piernas y planes rechazados
+        /// </summary>
+        public static List<ExternalPlanSetup> GetCandidateVMATPlans()
+        {
+            Patient pat = EclipseContext.GetInstance().Patient;
+            if (pat == null) return new List<ExternalPlanSetup>();
+            return pat.Courses.SelectMany(c => c.ExternalPlanSetups)
+                      .Where(p => !p.Id.ToLower().Contains("leg") && p.ApprovalStatus != PlanSetupApprovalStatus.Rejected && HasVMATArcs(p))
+                      .OrderByDescending(p => p.CreationDateTime ?? DateTime.MinValue)
+                      .ToList();
+        }
+
         public static List<VVector> ExtractIsoPositions(ExternalPlanSetup plan)
         {
             List<VVector> isoPositions = new List<VVector> { };

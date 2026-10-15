@@ -28,8 +28,8 @@ namespace AutoPlannerHelpers.Helpers
         {
             //left structure, right structure, unioned structure name
             List<UnionStructureModel> structuresToUnion = new List<UnionStructureModel> { };
-            List<string> LStructs = structureIds.Where(x => (x.Substring(x.Length - 2, 2).ToLower() == "_l" || x.Substring(x.Length - 2, 2).ToLower() == " l")).ToList();
-            List<string> RStructs = structureIds.Where(x => (x.Substring(x.Length - 2, 2).ToLower() == "_r" || x.Substring(x.Length - 2, 2).ToLower() == " r")).ToList();
+            List<string> LStructs = structureIds.Where(x => x.Length > 2 && (x.Substring(x.Length - 2, 2).ToLower() == "_l" || x.Substring(x.Length - 2, 2).ToLower() == " l")).ToList();
+            List<string> RStructs = structureIds.Where(x => x.Length > 2 && (x.Substring(x.Length - 2, 2).ToLower() == "_r" || x.Substring(x.Length - 2, 2).ToLower() == " r")).ToList();
             foreach (string itr in LStructs)
             {
                 string RStruct = RStructs.FirstOrDefault(x => x.Substring(0, x.Length - 2) == itr.Substring(0, itr.Length - 2));
@@ -37,6 +37,23 @@ namespace AutoPlannerHelpers.Helpers
                 if (!string.IsNullOrEmpty(RStruct) && !structureIds.Any(x => string.Equals(x.ToLower(), newName.ToLower())))
                 {
                     structuresToUnion.Add(new UnionStructureModel(itr, RStruct, newName));
+                }
+            }
+            //pares en espanol "Der"/"Izq" (Pulmon Der + Pulmon Izq -> Pulmones). Solo organos bilaterales conocidos
+            string[] spanishBases = { "pulmon", "ojo", "rinon", "cristalino", "parotida", "coclea" };
+            foreach (string izq in structureIds.Where(x => x.Length > 4 && x.ToLower().EndsWith(" izq")))
+            {
+                string baseName = izq.Substring(0, izq.Length - 4).Trim();
+                string der = structureIds.FirstOrDefault(x => x.Length > 4 && x.ToLower().EndsWith(" der") && string.Equals(x.Substring(0, x.Length - 4).Trim(), baseName, StringComparison.OrdinalIgnoreCase));
+                if (string.IsNullOrEmpty(der)) continue;
+                string normBase = NormalizeStructureId(baseName);
+                if (!spanishBases.Contains(normBase)) continue;
+                string last = baseName.Substring(baseName.Length - 1).ToLower();
+                string newName = ("aeiou".Contains(last) ? baseName + "s" : baseName + "es");
+                if (newName.Length > 16) continue;
+                if (!structureIds.Any(x => string.Equals(x, newName, StringComparison.OrdinalIgnoreCase)) && !structuresToUnion.Any(x => string.Equals(x.ProposedUnionStructureId, newName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    structuresToUnion.Add(new UnionStructureModel(izq, der, newName));
                 }
             }
             return structuresToUnion;
@@ -70,16 +87,17 @@ namespace AutoPlannerHelpers.Helpers
                 int numUnioned = 0;
                 foreach (UnionStructureModel itr in structuresToUnion)
                 {
+                    //union de estructuras bilaterales: es una ayuda, no debe detener el flujo si falla
                     Structure newStructure = GetStructureFromId(itr.ProposedUnionStructureId, true);
-                    if (ContourHelper.PerformStructureOperation(new StructureOperationModel(itr.Structure_Left, Enums.StructureDerivationOperation.Union, itr.Structure_Right, itr.ProposedUnionStructureId)))
+                    if (newStructure == null)
                     {
-                        ProvideUIUpdate(0,$"Error! Missing required structures for derivation or margins are not valid! Exiting!", true);
-                        return true;
+                        ProvideUIUpdate(0, $"Aviso: no se pudo crear {itr.ProposedUnionStructureId}. Se omite la union de {itr.Structure_Left} + {itr.Structure_Right}");
+                        continue;
                     }
-                    if (newStructure.IsEmpty)
+                    if (ContourHelper.PerformStructureOperation(new StructureOperationModel(itr.Structure_Left, Enums.StructureDerivationOperation.Union, itr.Structure_Right, itr.ProposedUnionStructureId)) || newStructure.IsEmpty)
                     {
-                        ProvideUIUpdate(0, $"Error! {newStructure.Id} is empty following union of L/R structures!", true);
-                        return true;
+                        ProvideUIUpdate(0, $"Aviso: la union {itr.Structure_Left} + {itr.Structure_Right} -> {itr.ProposedUnionStructureId} fallo o quedo vacia. Se continua");
+                        continue;
                     }
                     ProvideUIUpdate(100* (++numUnioned / calcItems), $"Unioned {itr.ProposedUnionStructureId}");
                 }
@@ -204,6 +222,12 @@ namespace AutoPlannerHelpers.Helpers
             new[] { "bladder", "vejiga" },
             new[] { "rectum", "recto" },
             new[] { "thyroid", "tiroides" },
+            new[] { "lungs", "pulmones" },
+            new[] { "eyes", "ojos", "globosoculares" },
+            new[] { "kidneys", "rinones" },
+            new[] { "lenses", "cristalinos" },
+            new[] { "oralcavity", "cavidadoral", "boca" },
+            new[] { "bowel", "cavintestinal", "intestino", "intestinos", "bowelbag" },
         };
 
         /// <summary>

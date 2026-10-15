@@ -134,7 +134,9 @@ namespace AutoPlannerHelpers.Context
             ctx.StructureSet = ss;
             if (ss != null) Logger.GetInstance().StructureSet = ss.UID;
             ctx.ImageFOR = image?.FOR ?? "";
-            if (plan != null)
+            //el plan abierto solo se usa como plan VMAT de trabajo si tiene arcos (si es el plan clinico del usuario sin arcos,
+            //se usa unicamente para leer la prescripcion)
+            if (plan != null && AutoPlannerHelpers.Helpers.PlanPrepHelper.HasVMATArcs(plan))
             {
                 ctx.VMATPlans = new List<ExternalPlanSetup> { plan };
                 Logger.GetInstance().PlanUIDs = new List<string> { plan.UID };
