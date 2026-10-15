@@ -318,7 +318,8 @@ namespace AutoPlannerHelpers.Helpers
         {
             Patient pat = EclipseContext.GetInstance().Patient;
             if (pat == null) return new List<ExternalPlanSetup>();
-            return pat.Courses.SelectMany(c => c.ExternalPlanSetups)
+            //solo cursos creados por el autoplanificador (Id "VMAT CSI", "VMAT CSI_2", "VMAT TBI", ...): nunca tomar planes clinicos manuales
+            return pat.Courses.Where(c => c.Id.ToUpper().StartsWith("VMAT")).SelectMany(c => c.ExternalPlanSetups)
                       .Where(p => !p.Id.ToLower().Contains("leg") && p.ApprovalStatus != PlanSetupApprovalStatus.Rejected && HasVMATArcs(p))
                       .OrderByDescending(p => p.CreationDateTime ?? DateTime.MinValue)
                       .ToList();

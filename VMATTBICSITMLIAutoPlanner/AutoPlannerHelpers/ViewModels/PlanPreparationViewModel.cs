@@ -101,7 +101,7 @@ namespace AutoPlannerHelpers.ViewModels
             List<ExternalPlanSetup> candidates = Helpers.PlanPrepHelper.GetCandidateVMATPlans();
             if (!candidates.Any())
             {
-                MessageBox.Show("No encontré en este paciente ningún plan con arcos VMAT.\n\n" +
+                MessageBox.Show("No encontré ningún plan creado por el autoplanificador (cursos 'VMAT ...') con arcos.\n\n" +
                     "La Preparación del plan trabaja sobre el plan que crea el autoplanificador en la pestaña 'Campos'.\n" +
                     "Posibles causas:\n" +
                     " 1) La pestaña 'Campos' no terminó (revise si salió un error en la ventana de progreso).\n" +
