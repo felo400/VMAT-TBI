@@ -71,6 +71,7 @@ namespace CSIAutoPlanner.Core
         {
             try
             {
+                if (PreflightCSI()) return true;
                 if (CheckExistingCourse()) return true;
                 if (CheckExistingPlans()) return true;
                 if (CheckTSArmsAvoid())
@@ -80,6 +81,11 @@ namespace CSIAutoPlanner.Core
                 if (CreateVMATPlans()) return true;
                 //plan, List<isocenter position, isocenter name, number of beams per isocenter>
                 List<PlanIsocenterModel> isoLocations = GetIsocenterPositions();
+                if (isoLocations == null || !isoLocations.Any() || isoLocations.All(x => !x.Isocenters.Any()))
+                {
+                    ProvideUIUpdate("Error: no se pudieron calcular las posiciones de los isocentros (ver mensajes anteriores). No se crearon campos.", true);
+                    return true;
+                }
                 UpdateUILabel("Assigning isocenters and beams: ");
                 int isoCount = 0;
                 foreach (PlanIsocenterModel itr in isoLocations)
@@ -102,6 +108,35 @@ namespace CSIAutoPlanner.Core
                 StackTraceError = e.StackTrace;
                 return true;
             }
+        }
+
+        /// <summary>
+        /// Verificaciones ANTES de crear el curso/plan, para no dejar cursos o planes vacios si algo falta
+        /// </summary>
+        private bool PreflightCSI()
+        {
+            UpdateUILabel("Verificaciones previas:");
+            List<string> problems = new List<string>();
+            if (planIsocenters == null || !planIsocenters.Any() || planIsocenters.All(x => x.Isocenters == null || !x.Isocenters.Any()))
+                problems.Add("No hay isocentros calculados: ejecute 'Estructuras OPT' en esta misma sesion antes de 'Campos'.");
+            if (prescriptions == null || !prescriptions.Any())
+                problems.Add("No hay targets asignados: en 'Definir targets' escoja la plantilla y pulse 'Asignar targets'.");
+            else
+            {
+                foreach (string t in prescriptions.Select(x => x.TargetId).Distinct())
+                    if (!StructureTuningHelper.DoesStructureExistInSS(t, true)) problems.Add($"El target '{t}' no existe o esta vacio.");
+            }
+            if (!StructureTuningHelper.DoesStructureExistInSS("body", true)) problems.Add("No existe BODY o esta vacio.");
+            if (GetBrainTarget() == null) problems.Add("No existe _Brain (ni Cerebro) con contorno: ejecute 'Estructuras OPT'.");
+            if (GetSpineTarget() == null) problems.Add("No existe _Spine (ni Medula) con contorno: ejecute 'Estructuras OPT'.");
+            if (problems.Any())
+            {
+                foreach (string p in problems) ProvideUIUpdate("  - " + p);
+                ProvideUIUpdate("No se creo ningun curso ni plan. Corrija lo anterior y vuelva a intentarlo.", true);
+                return true;
+            }
+            ProvideUIUpdate(100, $"Verificaciones previas OK. Isocentros por plan: {string.Join(", ", planIsocenters.Select(x => $"{x.PlanId}={x.Isocenters.Count}"))}");
+            return false;
         }
 
         #region Manage TS_ArmsAvoid
@@ -280,14 +315,15 @@ namespace CSIAutoPlanner.Core
             double spineZMin = 0.0;
             calcItems += 5;
 
-            if (GetSpineTarget() == null || !StructureTuningHelper.DoesStructureExistInSS("SpinalCord", true))
+            if (GetSpineTarget() == null)
             {
-                ProvideUIUpdate("Error! Either _Spine or SpinalCord structure are missing or empty! Correct and try again!", true);
+                ProvideUIUpdate("Error: no existe _Spine (ni la medula) o esta vacia. Ejecute 'Estructuras OPT' y verifique la medula.", true);
                 return (true, spineYMin, spineZMin, spineZMax);
             }
             ProvideUIUpdate(100 * ++counter / calcItems, "Retrieving _Spine Structure");
             Structure ptvSpine = GetSpineTarget();
-            Structure spine = StructureTuningHelper.GetStructureFromId("SpinalCord");
+            //la medula solo se usa como limite anterior; si no existe se usa el propio _Spine
+            Structure spine = StructureTuningHelper.FindStructureWithAlias("SpinalCord", true) ?? ptvSpine;
 
             ProvideUIUpdate("Calculating anterior extent of _Spine");
             spineYMin = ptvSpine.MeshGeometry.Positions.Min(p => p.Y);

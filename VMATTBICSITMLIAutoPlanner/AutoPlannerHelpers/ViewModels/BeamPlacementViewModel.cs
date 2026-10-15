@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -152,6 +153,7 @@ namespace AutoPlannerHelpers.ViewModels
 
         public void PopulateBeamPlacementUI(List<PlanIsocenterModel> isos)
         {
+            if (isos == null || !isos.Any()) return;
             RequestedNumberOfVMATIsos = isos.First().Isocenters.Count(x => x.BeamType == BeamType.VMAT);
             PlanIsocenterList.Clear();
             foreach (PlanIsocenterModel itr in isos)
@@ -160,7 +162,7 @@ namespace AutoPlannerHelpers.ViewModels
                 {
                     for (int i = 0; i < itr.Isocenters.Count(); i++)
                     {
-                        if (itr.Isocenters.ElementAt(i).NumberOfBeams == -1) itr.Isocenters.ElementAt(i).NumberOfBeams = _fieldsPerIso.ElementAt(i);
+                        if (itr.Isocenters.ElementAt(i).NumberOfBeams == -1) itr.Isocenters.ElementAt(i).NumberOfBeams = _fieldsPerIso.Any() ? _fieldsPerIso.ElementAt(Math.Min(i, _fieldsPerIso.Count - 1)) : 2;
                     }
                 }
                 PlanIsocenterList.Add(itr);
@@ -184,7 +186,7 @@ namespace AutoPlannerHelpers.ViewModels
                 List<IsocenterModel> newIsos = IsoNameHelper.GetTBIVMATIsoNames(_requestedNumberOfVMATIsos, totalNumIsos);
                 for (int i = 0; i < newIsos.Count(); i++)
                 {
-                    newIsos.ElementAt(i).NumberOfBeams = _fieldsPerIso.ElementAt(i);
+                    newIsos.ElementAt(i).NumberOfBeams = _fieldsPerIso.Any() ? _fieldsPerIso.ElementAt(Math.Min(i, _fieldsPerIso.Count - 1)) : 2;
                 }
 
                 PlanIsocenterList.Add(new PlanIsocenterModel(planId, newIsos));

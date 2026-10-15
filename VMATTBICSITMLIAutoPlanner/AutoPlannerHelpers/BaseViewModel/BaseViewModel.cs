@@ -476,6 +476,7 @@ namespace AutoPlannerHelpers.BaseViewModel
             if(failed)
             {
                 if (!string.IsNullOrEmpty(generateTS.StrackTraceError)) Logger.GetInstance().LogError(generateTS.StrackTraceError);
+                ReportStepFailure("Estructuras OPT", generateTS.LogOutput);
                 return;
             }
 
@@ -510,6 +511,16 @@ namespace AutoPlannerHelpers.BaseViewModel
                 Logger.GetInstance().LogError("Error! Script is not connected to aria or no structure set loaded! Cannot perform beam placement!");
                 return;
             }
+            //Los isocentros se calculan en 'Estructuras OPT'. Sin ellos el plan se crearia vacio (solo curso + plan sin campos)
+            if (PlanIsocenters == null || !PlanIsocenters.Any() || PlanIsocenters.All(x => x.Isocenters == null || !x.Isocenters.Any()))
+            {
+                MessageBox.Show("Todavía no hay isocentros calculados.\n\n" +
+                    "Los isocentros se calculan en la pestaña 'Estructuras OPT'. Ese paso debe ejecutarse en ESTA MISMA sesión del script, justo antes de 'Campos' " +
+                    "(si lo hizo en otra sesión, vuelva a ejecutarlo: actualiza las estructuras sin duplicarlas).\n\n" +
+                    "Orden: Definir targets (plantilla + Asignar targets) -> Estructuras OPT -> Campos.",
+                    "Falta ejecutar Estructuras OPT");
+                return;
+            }
             _planIsocenters = PlanIsocenters;
             GeneratePlansAndPlaceBeamsBase placeBeams = GetBeamPlacementClassInstanceForPlanType(linac, energy, contourOverlap, overlapMargin, PlanIsocenters);
             bool failed = placeBeams.Execute();
@@ -517,6 +528,12 @@ namespace AutoPlannerHelpers.BaseViewModel
             if (failed)
             {
                 if (!string.IsNullOrEmpty(placeBeams.StackTraceError)) Logger.GetInstance().LogError(placeBeams.StackTraceError);
+                ReportStepFailure("Campos", placeBeams.LogOutput);
+                return;
+            }
+            if (!placeBeams.VMATPlans.Any() || placeBeams.VMATPlans.All(p => !p.Beams.Any(b => !b.IsSetupField)))
+            {
+                ReportStepFailure("Campos (el plan quedó sin campos)", placeBeams.LogOutput);
                 return;
             }
             if (placeBeams.VMATPlans.Any())
@@ -533,6 +550,27 @@ namespace AutoPlannerHelpers.BaseViewModel
 
             BeamPlacementTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Done;
             OptimizationSetupTabBackground = AutoPlannerHelpers.UIHelpers.ThemeBrushes.Pending;
+        }
+
+        /// <summary>
+        /// Cuando un paso falla: guarda el registro completo en el Escritorio y muestra las ultimas lineas, para poder enviarlas
+        /// </summary>
+        protected void ReportStepFailure(string step, string log)
+        {
+            string file = "";
+            try
+            {
+                string dir = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                if (string.IsNullOrEmpty(dir) || !System.IO.Directory.Exists(dir)) dir = System.IO.Path.GetTempPath();
+                file = System.IO.Path.Combine(dir, "VMAT_AutoPlanner_ultimo_error.txt");
+                System.IO.File.WriteAllText(file, $"Paso: {step}\r\nFecha: {DateTime.Now:s}\r\nPaciente: {EclipseContext.GetInstance().Patient?.Id}\r\n\r\n{log}");
+            }
+            catch { file = ""; }
+            string[] lines = (log ?? "").Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            string tail = string.Join("\n", lines.Skip(Math.Max(0, lines.Length - 25)));
+            MessageBox.Show($"FALLÓ el paso: {step}\n\nÚltimas líneas del registro:\n{tail}\n\n" +
+                (string.IsNullOrEmpty(file) ? "" : $"Registro completo guardado en:\n{file}\n(envíe ese archivo para corregir el problema)"),
+                "Error en " + step, MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         protected abstract GeneratePlansAndPlaceBeamsBase GetBeamPlacementClassInstanceForPlanType(string linac, string energy, bool contourOverlap, double overlapMargin, List<PlanIsocenterModel> PlanIsocenters);
